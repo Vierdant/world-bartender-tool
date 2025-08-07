@@ -4,14 +4,22 @@ export type MenuItem = {
   type: string;
   available: boolean;
   price: number;
-  emotes: string[]; // /me lines
   image?: string;
+  emotes: MultistepEmotes;
+};
+
+export type MultistepEmotes = {
+  advanced: boolean;
+  sections: {
+    name: string;
+    steps: string[];
+  }[];
 };
 
 export type RPHelper = {
-    id: string;
-    name: string;
-    commands: string[]; // e.g. ["passes the {items} to {customerName}"]
+  id: string;
+  name: string;
+  commands: string[]; // e.g. ["passes the {items} to {customerName}"]
 };
 
 export type Profile = {
@@ -26,6 +34,10 @@ export type Order = {
   id: string;
   customerName?: string;
   customerId?: number;
-  items: { id: string; qty: number }[]; // item + quantity
+  items: {
+    id: string; qty: number;
+    _emoteSectionIndex?: number;
+    _emoteStepIndex?: number;
+  }[]; // item + quantity
   createdAt?: number;
 };

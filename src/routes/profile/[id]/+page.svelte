@@ -10,7 +10,6 @@
     import type { Profile, Order, MenuItem } from "$lib/types";
     import { nanoid } from "nanoid";
     import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-    import { randomEmote } from "$lib/utils/emote";
     import ManageMenuModal from "$lib/components/ManageMenuModal.svelte";
     import { archivedOrders } from "$lib/stores/profile";
     import { theme } from "$lib/stores/theme";
@@ -18,6 +17,7 @@
     import RpHelperModal from "$lib/components/RPHelperModal.svelte";
     import ConfigureHelpersModal from "$lib/components/ConfigureHelpersModal.svelte";
     import Toaster from "$lib/components/Toaster.svelte";
+    import ActionViewer from "$lib/components/ActionViewer.svelte";
     import { toasts } from "$lib/stores/toastStore";
 
     export let data;
@@ -40,6 +40,10 @@
     const showEditModal = writable(false);
     const editableOrder = writable<Order | null>(null);
     const panelOpen = writable(false);
+    const showItemActionModal = writable(false);
+    const itemActionItem = writable<MenuItem | null>(null);
+    const itemActionOrder = writable<Order | null>(null);
+    const lastUsedSectionIndex: Record<string, number> = {};
 
     let itemBeingEdited: MenuItem | null = null;
     let draggedItemId: string | null = null;
@@ -47,6 +51,7 @@
     let insertPlaceholderAt: number | null = null;
     let isDragging = false;
     let showContextMenu = false;
+    let showHelpModal = false;
 
     $: quantities = $itemQuantities;
 
@@ -74,24 +79,75 @@
         panelOpen.update((v) => !v);
     }
 
+    function toggleHelpModal() {
+        showHelpModal = !showHelpModal;
+    }
+
+    function openEmoteModal(order: Order, item: MenuItem | undefined) {
+        if (item) {
+            itemActionItem.set(item);
+            itemActionOrder.set(order);
+            showItemActionModal.set(true);
+        }
+    }
+
+    function closeActionModal() {
+        showItemActionModal.set(false);
+    }
+
     function handleClickOutside(event: MouseEvent) {
-        const menu = document.getElementById("context-menu-button");
-        const dropdown = document.getElementById("context-menu-dropdown");
+        const context = document.getElementById("context-menu-button");
+        const help = document.getElementById("help-menu-button");
         if (
-            !menu?.contains(event.target as Node) &&
-            !dropdown?.contains(event.target as Node)
+            !context?.contains(event.target as Node) &&
+            !help?.contains(event.target as Node)
         ) {
             showContextMenu = false;
+            showHelpModal = false;
         }
+    }
+
+    function getRandomSectionIndex(
+        itemId: string,
+        sectionCount: number,
+    ): number {
+        if (sectionCount <= 1) return 0;
+
+        let newIndex: number;
+        do {
+            newIndex = Math.floor(Math.random() * sectionCount);
+        } while (newIndex === lastUsedSectionIndex[itemId]);
+
+        lastUsedSectionIndex[itemId] = newIndex;
+        return newIndex;
     }
 
     function createOrder() {
         const name = get(newCustomerName).trim();
         const quantities = get(itemQuantities);
         const idValue = get(newCustomerId);
+
         const items = Object.entries(quantities)
             .filter(([_, qty]) => qty > 0)
-            .map(([id, qty]) => ({ id, qty }));
+            .map(([id, qty]) => {
+                const item = getItem(id);
+                const isAdvanced = item?.emotes?.advanced ?? false;
+
+                const sectionCount = item?.emotes?.sections?.length ?? 0;
+
+                const randomSectionIndex = isAdvanced
+                    ? getRandomSectionIndex(id, sectionCount)
+                    : 0;
+
+                return {
+                    id,
+                    qty,
+                    ...(isAdvanced && {
+                        _emoteSectionIndex: randomSectionIndex,
+                        _emoteStepIndex: 0,
+                    }),
+                };
+            });
 
         if (items.length === 0) return;
 
@@ -124,8 +180,8 @@
         return get(itemQuantities)[itemId] || 0;
     }
 
-    function getItem(itemId: string): MenuItem | undefined {
-        return profile.menu.find((m) => m.id === itemId);
+    function getItem(itemId: string): MenuItem {
+        return profile.menu.find((m) => m.id === itemId) || profile.menu[0];
     }
 
     function getTotal(order: Order): number {
@@ -135,12 +191,60 @@
         }, 0);
     }
 
-    function copyEmote(itemId: string, customerName?: string) {
+    function randomFrom<T>(arr: T[]): T {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function interpolate(
+        template: string,
+        context: Record<string, string>,
+    ): string {
+        return template.replace(/\{(\w+)\}/g, (_, key) => context[key] ?? "");
+    }
+
+    function copyEmote(order: Order, itemId: string, customerName?: string) {
         const item = getItem(itemId);
         if (!item) return;
-        const text = randomEmote(item.emotes, {
-            name: customerName ?? "the customer",
-        });
+
+        const orderItem = order.items.find((i) => i.id === itemId);
+        if (!orderItem) return;
+
+        const emoteSections = item.emotes.sections;
+        let text = "";
+
+        if (item.emotes.advanced) {
+            // Default to first section if not tracked yet
+            if (orderItem._emoteSectionIndex === undefined) {
+                orderItem._emoteSectionIndex = 0;
+                orderItem._emoteStepIndex = 0;
+            }
+
+            const section = emoteSections[orderItem._emoteSectionIndex];
+            const step = section.steps[orderItem._emoteStepIndex ?? 0];
+
+            text = interpolate(step, {
+                name: customerName ?? "the customer",
+            });
+
+            // Advance the step index
+            orderItem._emoteStepIndex! += 1;
+
+            // If we reached end of steps in current section, cycle to a new one
+            if (orderItem._emoteStepIndex! >= section.steps.length) {
+                const nextSectionIndex =
+                    (orderItem._emoteSectionIndex! + 1) % emoteSections.length;
+                orderItem._emoteSectionIndex = nextSectionIndex;
+                orderItem._emoteStepIndex = 0;
+            }
+        } else {
+            // Not advanced: pick random step from first section
+            const steps = item.emotes.sections[0]?.steps ?? [];
+            const step = randomFrom(steps);
+            text = interpolate(step, {
+                name: customerName ?? "the customer",
+            });
+        }
+
         writeText(text);
         toasts.addToast({ message: "RP command copied", type: "info" });
     }
@@ -208,7 +312,10 @@
             type: "section",
             available: true,
             price: 0.0,
-            emotes: [],
+            emotes: {
+                advanced: false,
+                sections: [],
+            },
         };
 
         itemBeingEdited = newSection;
@@ -417,7 +524,7 @@
     <div class="absolute right-0 flex items-center gap-5 mr-8">
         <button
             on:click={toggleTheme}
-            class="absolute right-0 p-3 mr-14 rounded-full bg-black dark:bg-(--accent-color) transition-colors"
+            class="absolute right-0 p-3 mr-14 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
             aria-label="Toggle Theme"
         >
             {#if currentTheme === "light"}
@@ -458,7 +565,7 @@
             <button
                 id="context-menu-button"
                 on:click={toggleContextMenu}
-                class="p-3 rounded-full bg-(--accent-color) transition-colors"
+                class="p-3 rounded-full bg-(--accent-color) transition-colors cursor-pointer"
                 aria-label="Open Menu"
             >
                 <!-- Dots Icon -->
@@ -500,6 +607,29 @@
                 </div>
             {/if}
         </div>
+
+        <button
+            id="help-menu-button"
+            on:click={toggleHelpModal}
+            class="absolute right-0 p-3 mr-28 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
+            aria-label="Help"
+        >
+            <!-- Question Mark Icon -->
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 text-(--field-color)"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 10h.01M12 18h.01M16 10h.01M12 14h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z"
+                />
+            </svg>
+        </button>
     </div>
 
     <input
@@ -510,6 +640,69 @@
         on:change={updateProfileFromFile}
     />
 </div>
+
+{#if showHelpModal}
+    <div
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+        <div class="bg-(--field-color) rounded-xl p-8 shadow-2xl w-96 relative">
+            <button
+                class="absolute top-3 right-3 text-xl text-(--text-color-muted) cursor-pointer"
+                on:click={toggleHelpModal}
+            >
+                ✕
+            </button>
+
+            <h2 class="text-2xl font-semibold text-(--text-color) mb-4">
+                Help & Support
+            </h2>
+
+            <div class="flex flex-col gap-4">
+                <!-- Wikipedia Link -->
+                <a
+                    href="https://github.com/Vierdant/world-bartender-tool/wiki"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-(--accent-color) text-black hover:opacity-80 transition"
+                >
+                    <img src="../github-icon.png" alt="Wiki" class="w-6 h-6" />
+                    <span>Github Wiki</span>
+                </a>
+
+                <!-- Support Image -->
+                <a
+                    href="https://ko-fi.com/vierdant"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-(--error-color) text-white hover:opacity-80 transition"
+                >
+                    <img
+                        src="../coffee-icon.png"
+                        alt="Buy Coffee"
+                        class="w-6 h-6"
+                    />
+                    <span>Buy me a coffee {":)"}</span>
+                </a>
+
+                <!-- Discord Link -->
+                <a
+                    href="https://discord.gg/cnknQJDBer"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-indigo-500 text-white hover:opacity-80 transition"
+                >
+                    <img
+                        src="../discord-icon.png"
+                        alt="Discord"
+                        class="w-6 h-6"
+                    />
+                    <span>Join our Discord</span>
+                </a>
+            </div>
+        </div>
+    </div>
+{/if}
+
 <div class="layout">
     <!-- Left Panel -->
     <div
@@ -1080,6 +1273,16 @@
         </div>
     {/if}
 
+    {#if $showItemActionModal && $itemActionItem && $itemActionOrder}
+        <ActionViewer
+            item={$itemActionItem}
+            order={$itemActionOrder}
+            on:close={() => {
+                showItemActionModal.set(false);
+            }}
+        />
+    {/if}
+
     <div class="right-panel-wrapper">
         <button class="panel-toggle-button md:hidden" on:click={togglePanel}>
             {$panelOpen ? "Close" : "Orders"}
@@ -1171,16 +1374,83 @@
                                             <div>
                                                 ▪ {getItem(item.id)?.name} × {item.qty}
                                             </div>
-                                            <button
-                                                on:click={() =>
-                                                    copyEmote(
-                                                        item.id,
-                                                        order.customerName,
-                                                    )}
-                                                class="text-sm text-blue-400 hover:underline cursor-pointer"
-                                            >
-                                                Copy RP
-                                            </button>
+                                            <div class="flex gap-3">
+                                                <button
+                                                    on:click={() =>
+                                                        openEmoteModal(
+                                                            order,
+                                                            getItem(item.id),
+                                                        )}
+                                                    class="text-sm text-(--text-color-muted) hover:underline cursor-pointer"
+                                                >
+                                                    View List
+                                                </button>
+                                                <button
+                                                    on:click={() => {
+                                                        copyEmote(
+                                                            order,
+                                                            item.id,
+                                                            order.customerName,
+                                                        );
+                                                        currentOrders.update(
+                                                            (orders) => {
+                                                                const index =
+                                                                    orders.findIndex(
+                                                                        (o) =>
+                                                                            o.id ===
+                                                                            order.id,
+                                                                    );
+                                                                if (
+                                                                    index !== -1
+                                                                ) {
+                                                                    orders[
+                                                                        index
+                                                                    ] = {
+                                                                        ...orders[
+                                                                            index
+                                                                        ],
+                                                                        items: [
+                                                                            ...orders[
+                                                                                index
+                                                                            ]
+                                                                                .items,
+                                                                        ],
+                                                                    }; // clone the items array to trigger reactivity
+                                                                }
+                                                                return [
+                                                                    ...orders,
+                                                                ];
+                                                            },
+                                                        );
+                                                    }}
+                                                    class="text-sm text-blue-400 hover:underline cursor-pointer"
+                                                >
+                                                    Copy RP
+                                                    {#if getItem(item.id).emotes.advanced}
+                                                        [
+                                                        {(order.items.find(
+                                                            (i) =>
+                                                                i.id ===
+                                                                item.id,
+                                                        )?._emoteStepIndex ??
+                                                            0) +
+                                                            1 <
+                                                        getItem(item.id).emotes
+                                                            .sections[
+                                                            order.items.find(
+                                                                (i) =>
+                                                                    i.id ===
+                                                                    item.id,
+                                                            )
+                                                                ?._emoteSectionIndex ??
+                                                                0
+                                                        ].steps.length
+                                                            ? `${(order.items.find((i) => i.id === item.id)?._emoteStepIndex ?? 0) + 1}/${getItem(item.id).emotes.sections[order.items.find((i) => i.id === item.id)?._emoteSectionIndex ?? 0].steps.length}`
+                                                            : `${(order.items.find((i) => i.id === item.id)?._emoteStepIndex ?? 0) + 1}/${getItem(item.id).emotes.sections[order.items.find((i) => i.id === item.id)?._emoteSectionIndex ?? 0].steps.length}`}
+                                                        ]
+                                                    {/if}
+                                                </button>
+                                            </div>
                                         </li>
                                     {/if}
                                 {/each}

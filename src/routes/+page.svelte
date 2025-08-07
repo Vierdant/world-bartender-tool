@@ -316,7 +316,7 @@
       <div class="flex flex-col gap-4">
         <!-- Wikipedia Link -->
         <a
-          href="https://en.wikipedia.org/wiki/YourTopic"
+          href="https://github.com/Vierdant/world-bartender-tool/wiki"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-3 p-3 rounded-lg bg-(--accent-color) text-black hover:opacity-80 transition"
@@ -327,7 +327,7 @@
 
         <!-- Support Image -->
         <a
-          href="https://en.wikipedia.org/wiki/YourTopic"
+          href="https://ko-fi.com/vierdant"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-3 p-3 rounded-lg bg-(--error-color) text-white hover:opacity-80 transition"
@@ -338,7 +338,7 @@
 
         <!-- Discord Link -->
         <a
-          href="https://discord.gg/YourInviteCode"
+          href="https://discord.gg/cnknQJDBer"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-3 p-3 rounded-lg bg-indigo-500 text-white hover:opacity-80 transition"

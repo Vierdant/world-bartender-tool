@@ -1,6 +1,10 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:where(.dark, .dark *));
+
 
 :root {
     --body-color: #f1f3f5;
@@ -31,3 +35,6 @@
 body {
     background-color: var(--body-color);
 }
+
+
+@plugin "tailwind-scrollbar";

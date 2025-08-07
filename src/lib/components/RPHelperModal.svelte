@@ -2,6 +2,8 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { Order, MenuItem, Profile } from "$lib/types";
+    import Toaster from "$lib/components/Toaster.svelte";
+    import { toasts } from "$lib/stores/toastStore";
 
     export let order: Order;
     export let profile: Profile;
@@ -45,13 +47,23 @@
                         </h3>
                         <ul class="space-y-1">
                             {#each section.commands as command}
-                                <li class="flex justify-between items-center border-t-1 border-(--border-color)">
+                                <li
+                                    class="flex justify-between items-center border-t-1 border-(--border-color)"
+                                >
                                     <span class="text-sm text-(--text-color)">
                                         {fillPlaceholders(command)}
                                     </span>
                                     <button
                                         class="text-(--accept-color) text-xs cursor-pointer"
-                                        on:click={() => navigator.clipboard.writeText(fillPlaceholders(command))}
+                                        on:click={() => {
+                                            navigator.clipboard.writeText(
+                                                fillPlaceholders(command),
+                                            );
+                                            toasts.addToast({
+                                                message: "RP command copied",
+                                                type: "info",
+                                            });
+                                        }}
                                     >
                                         Copy
                                     </button>
@@ -77,3 +89,4 @@
         </div>
     </div>
 </div>
+<Toaster/>
