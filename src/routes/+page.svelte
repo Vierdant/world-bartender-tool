@@ -5,7 +5,7 @@
   import { theme } from "$lib/stores/theme";
   import { goto } from "$app/navigation";
   import { v4 as uuid } from "uuid";
-  import Toaster from "$lib/components/Toaster.svelte";
+  import Toaster from "$lib/components/UI/Toaster.svelte";
   import { toasts } from "$lib/stores/toastStore";
 
   let profileList = $profiles;
@@ -420,7 +420,7 @@
       on:click={() => openProfile(profile)}
     >
       <img
-        src={profile.image || "/placeholder.jpg"}
+        src={profile.image}
         alt={profile.name}
         class="absolute top-0 w-full h-full object-cover"
       />

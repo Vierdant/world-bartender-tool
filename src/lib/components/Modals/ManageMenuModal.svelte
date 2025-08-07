@@ -206,7 +206,7 @@
           Cancel
         </button>
         <button
-          on:click={save}
+          on:click={() => { save(); dispatch("close"); }}
           class="px-4 py-2 text-sm bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition rounded cursor-pointer"
         >
           Create

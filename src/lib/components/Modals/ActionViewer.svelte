@@ -2,7 +2,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import type { Order, MenuItem, Profile } from "$lib/types";
-  import Toaster from "$lib/components/Toaster.svelte";
+  import Toaster from "$lib/components/UI/Toaster.svelte";
   import { toasts } from "$lib/stores/toastStore";
 
   export let item: MenuItem;

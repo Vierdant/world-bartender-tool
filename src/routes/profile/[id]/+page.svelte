@@ -10,15 +10,18 @@
     import type { Profile, Order, MenuItem } from "$lib/types";
     import { nanoid } from "nanoid";
     import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-    import ManageMenuModal from "$lib/components/ManageMenuModal.svelte";
+    import ManageMenuModal from "$lib/components/Modals/ManageMenuModal.svelte";
     import { archivedOrders } from "$lib/stores/profile";
     import { theme } from "$lib/stores/theme";
-    import ArchivedOrdersModal from "$lib/components/ArchivedOrdersModal.svelte";
-    import RpHelperModal from "$lib/components/RPHelperModal.svelte";
-    import ConfigureHelpersModal from "$lib/components/ConfigureHelpersModal.svelte";
-    import Toaster from "$lib/components/Toaster.svelte";
-    import ActionViewer from "$lib/components/ActionViewer.svelte";
+    import ArchivedOrdersModal from "$lib/components/Modals/ArchivedOrdersModal.svelte";
+    import RpHelperModal from "$lib/components/Modals/RPHelperModal.svelte";
+    import ConfigureHelpersModal from "$lib/components/Modals/ConfigureHelpersModal.svelte";
+    import Toaster from "$lib/components/UI/Toaster.svelte";
+    import ActionViewer from "$lib/components/Modals/ActionViewer.svelte";
+    import CustomerEditorModal from "$lib/components/Modals/CustomerEditorModal.svelte";
+    import ConfirmationScreen from "$lib/components/UI/ConfirmationScreen.svelte";
     import { toasts } from "$lib/stores/toastStore";
+    import { goto } from "$app/navigation";
 
     export let data;
     export let profile: Profile = data.profile;
@@ -58,10 +61,34 @@
     onMount(() => {
         activeProfile.set(profile);
         document.addEventListener("click", handleClickOutside);
+        document.addEventListener("keydown", function (event) {
+            if (
+                event.key === "F5" ||
+                (event.ctrlKey && event.key === "r") ||
+                (event.metaKey && event.key === "r")
+            ) {
+                event.preventDefault();
+            }
+        })
+        document.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+        });
     });
 
     onDestroy(() => {
         document.removeEventListener("click", handleClickOutside);
+        document.addEventListener("keydown", function (event) {
+            if (
+                event.key === "F5" ||
+                (event.ctrlKey && event.key === "r") ||
+                (event.metaKey && event.key === "r")
+            ) {
+                event.preventDefault();
+            }
+        });
+        document.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+        });
     });
 
     let currentTheme = "light";
@@ -89,10 +116,6 @@
             itemActionOrder.set(order);
             showItemActionModal.set(true);
         }
-    }
-
-    function closeActionModal() {
-        showItemActionModal.set(false);
     }
 
     function handleClickOutside(event: MouseEvent) {
@@ -174,10 +197,6 @@
             ...quantities,
             [itemId]: qty,
         }));
-    }
-
-    function getQty(itemId: string): number {
-        return get(itemQuantities)[itemId] || 0;
     }
 
     function getItem(itemId: string): MenuItem {
@@ -507,6 +526,28 @@
         a.download = `${profile.name.replace(/\s+/g, "_")}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    function updateProfile() {
+        const newProfile = {
+            id: profile.id,
+            name: profile.name,
+            image: profile.image,
+            menu: profile.menu,
+            rpHelpers: profile.rpHelpers,
+        };
+
+        profiles.update((profiles) =>
+            profiles.map((profile) =>
+                profile.id === newProfile.id
+                    ? { ...profile, ...newProfile }
+                    : profile,
+            ),
+        );
+
+        profile = newProfile;
+
+        activeProfile.set({ ...profile });
     }
 </script>
 
@@ -902,25 +943,8 @@
                                         let menu = profile.menu.filter(
                                             (i) => i.id !== item.id,
                                         );
-                                        const newProfile = {
-                                            id: profile.id,
-                                            name: profile.name,
-                                            image: profile.image,
-                                            menu: menu,
-                                            rpHelpers: profile.rpHelpers,
-                                        };
-                                        profiles.update((profiles) =>
-                                            profiles.map((profile) =>
-                                                profile.id === newProfile.id
-                                                    ? {
-                                                          ...profile,
-                                                          ...newProfile,
-                                                      }
-                                                    : profile,
-                                            ),
-                                        );
-                                        profile = newProfile;
-                                        activeProfile.set({ ...profile });
+                                        profile.menu = menu;
+                                        updateProfile();
                                     }}
                                 >
                                     <svg
@@ -1058,34 +1082,11 @@
                 );
 
                 if (idx >= 0) {
-                    // Edit existing
                     profile.menu[idx] = updatedItem;
                 } else {
-                    // Add new
                     profile.menu.push(updatedItem);
                 }
-
-                const newProfile = {
-                    id: profile.id,
-                    name: profile.name,
-                    image: profile.image,
-                    menu: profile.menu,
-                    rpHelpers: profile.rpHelpers,
-                };
-
-                profiles.update((profiles) =>
-                    profiles.map((profile) =>
-                        profile.id === newProfile.id
-                            ? { ...profile, ...newProfile }
-                            : profile,
-                    ),
-                );
-
-                profile = newProfile;
-
-                activeProfile.set({ ...profile }); // Trigger reactive update
-                itemBeingEdited = null;
-                showAddModal.set(false);
+                updateProfile();
             }}
         />
     {/if}
@@ -1125,152 +1126,53 @@
     {/if}
 
     {#if $showReturnConfirm}
-        <div
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
-            <div class="bg-(--body-color) p-6 rounded shadow-md w-[300px]">
-                <h2 class="text-lg font-bold mb-4 text-(--text-color)">
-                    Return to Landing Page?
-                </h2>
-                <p class="mb-4 text-sm text-(--text-color)">
-                    Are you sure you want to leave this session?
-                </p>
-                <div class="flex justify-end gap-2">
-                    <button
-                        class="px-3 py-1 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition rounded cursor-pointer"
-                        on:click={() => showReturnConfirm.set(false)}
-                    >
-                        Cancel
-                    </button>
-                    <a
-                        href="/"
-                        class="px-3 py-1 text-sm bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition rounded cursor-pointer"
-                    >
-                        Confirm
-                    </a>
-                </div>
-            </div>
-        </div>
+        <ConfirmationScreen
+            type="main"
+            header="Return to Landing Page?"
+            text="Are you sure you want to leave this session?"
+            on:abort={() => showReturnConfirm.set(false)}
+            on:confirm={() => goto("/")}
+        />
     {/if}
 
     {#if $showDeleteConfirm}
-        <div
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
-            <div class="bg-(--body-color) p-6 rounded shadow-md w-[300px]">
-                <h2 class="text-lg font-bold mb-4 text-(--error-color)">
-                    Delete Profile?
-                </h2>
-                <p class="mb-4 text-sm text-(--text-color)">
-                    This action is permanent and cannot be undone.
-                </p>
-                <div class="flex justify-end gap-2">
-                    <button
-                        class="px-3 py-1 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition rounded cursor-pointer"
-                        on:click={() => showDeleteConfirm.set(false)}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        class="px-3 py-1 text-sm bg-(--error-color) text-white rounded hover:bg-red-700 transition rounded cursor-pointer"
-                        on:click={deleteProfile}
-                    >
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>
+        <ConfirmationScreen
+            type="error"
+            header="Delete Profile?"
+            text="This action is permanent and cannot be undone."
+            confirm_text="Delete"
+            on:abort={() => showDeleteConfirm.set(false)}
+            on:confirm={deleteProfile}
+        />
     {/if}
 
     {#if $showCancelConfirm && $orderToCancel}
-        <div
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
-            <div class="bg-(--body-color) p-6 rounded shadow-md w-[300px]">
-                <h2 class="text-lg font-bold mb-4 text-(--error-color)">
-                    Cancel Order?
-                </h2>
-                <p class="mb-4 text-sm text-(--text-color)">
-                    This order will be permanently deleted and not archived.
-                </p>
-                <div class="flex justify-end gap-2">
-                    <button
-                        class="px-3 py-1 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition rounded cursor-pointer"
-                        on:click={() => showCancelConfirm.set(false)}
-                    >
-                        Abort
-                    </button>
-                    <button
-                        class="px-3 py-1 text-sm bg-(--error-color) text-white rounded hover:bg-red-700 transition rounded cursor-pointer"
-                        on:click={() => {
-                            cancelOrder($orderToCancel.id);
-                            showCancelConfirm.set(false);
-                            orderToCancel.set(null);
-                        }}
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
+        <ConfirmationScreen
+            type="error"
+            header="Cancel Order?"
+            text="This order will be permanently deleted and not archived."
+            on:abort={() => showCancelConfirm.set(false)}
+            on:confirm={() => {
+                cancelOrder($orderToCancel.id);
+                showCancelConfirm.set(false);
+                orderToCancel.set(null);
+            }}
+        />
     {/if}
 
     {#if $showEditModal && $editableOrder}
-        <div
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
-            <div class="bg-(--body-color) p-6 rounded shadow-md w-[300px]">
-                <h2 class="text-lg font-bold mb-4 text-(--text-color)">
-                    Edit Customer Details
-                </h2>
-                <div class="mb-4">
-                    <label
-                        for="edit-order-name"
-                        class="text-(--text-color) block text-sm mb-1"
-                        >Customer Name</label
-                    >
-                    <input
-                        id="edit-order-name"
-                        class="w-full px-2 py-1 bg-(--field-color) rounded border border-(--border-color) text-(--text-color) text-sm"
-                        bind:value={$editableOrder.customerName}
-                    />
-                </div>
-                <div class="mb-4">
-                    <label
-                        for="edit-order-id"
-                        class="text-(--text-color) block text-sm mb-1"
-                        >Customer Name</label
-                    >
-                    <input
-                        id="edit-order-id"
-                        class="w-full px-2 py-1 bg-(--field-color) rounded border border-(--border-color) text-(--text-color) text-sm"
-                        type="number"
-                        bind:value={$editableOrder.customerId}
-                    />
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button
-                        class="px-4 py-2 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition rounded cursor-pointer"
-                        on:click={() => showEditModal.set(false)}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        class="px-4 py-2 text-sm bg-blue-500 text-white hover:bg-blue-600 transition rounded cursor-pointer"
-                        on:click={() => {
-                            updateOrderDetails(
-                                $editableOrder.id,
-                                $editableOrder.customerName || null,
-                                $editableOrder.customerId || null,
-                            );
-                            showEditModal.set(false);
-                        }}
-                    >
-                        Save
-                    </button>
-                </div>
-            </div>
-        </div>
+        <CustomerEditorModal
+            order={$editableOrder}
+            on:close={() => showEditModal.set(false)}
+            on:save={() => {
+                updateOrderDetails(
+                    $editableOrder.id,
+                    $editableOrder.customerName || null,
+                    $editableOrder.customerId || null,
+                );
+                showEditModal.set(false);
+            }}
+        />
     {/if}
 
     {#if $showItemActionModal && $itemActionItem && $itemActionOrder}
