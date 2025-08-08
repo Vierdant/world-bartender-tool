@@ -37,8 +37,9 @@ function interpolate(template: string, context: Record<string, string>): string 
     return template.replace(/\{(\w+)\}/g, (_, key) => context[key] ?? '');
 }
 
-export function createOrder(menu: MenuItem[]) {
-    const name = get(newCustomerName).trim();
+export async function createOrder(menu: MenuItem[]) {
+    const { sanitizeInput } = await import('$lib/utils/validation');
+    const name = sanitizeInput(get(newCustomerName));
     const quantities = get(itemQuantities);
     const idValue = get(newCustomerId);
 
@@ -148,7 +149,8 @@ export function updateOrderDetails(
     );
 }
 
-export function copyEmote(order: Order, itemId: string, menu: MenuItem[], customerName?: string) {
+export async function copyEmote(order: Order, itemId: string, menu: MenuItem[], customerName?: string) {
+    const { sanitizeInput } = await import('$lib/utils/validation');
     const item = menu.find((m) => m.id === itemId);
     if (!item) return;
 
@@ -168,8 +170,9 @@ export function copyEmote(order: Order, itemId: string, menu: MenuItem[], custom
         const section = emoteSections[orderItem._emoteSectionIndex];
         const step = section.steps[orderItem._emoteStepIndex ?? 0];
 
+        const sanitizedCustomerName = customerName ? sanitizeInput(customerName) : 'the customer';
         text = interpolate(step, {
-            name: customerName ?? 'the customer',
+            name: sanitizedCustomerName,
         });
 
         // Advance the step index
@@ -186,8 +189,9 @@ export function copyEmote(order: Order, itemId: string, menu: MenuItem[], custom
         // Not advanced: pick random step from first section
         const steps = item.emotes.sections[0]?.steps ?? [];
         const step = randomFrom(steps);
+        const sanitizedCustomerName = customerName ? sanitizeInput(customerName) : 'the customer';
         text = interpolate(step, {
-            name: customerName ?? 'the customer',
+            name: sanitizedCustomerName,
         });
     }
 

@@ -6,6 +6,7 @@
     import { showReturnConfirm } from '$lib/stores/uiStore';
     import { goto } from '$app/navigation';
     import { onMount, onDestroy } from 'svelte';
+    import AnimatedModal from '$lib/components/UI/AnimatedModal.svelte';
 
     export let profile: Profile;
 
@@ -23,9 +24,12 @@
     function handleClickOutside(event: MouseEvent) {
         const context = document.getElementById('context-menu-button');
         const help = document.getElementById('help-menu-button');
+        const helpModal = document.querySelector('[data-modal="help"]');
+        
         if (
             !context?.contains(event.target as Node) &&
-            !help?.contains(event.target as Node)
+            !help?.contains(event.target as Node) &&
+            !helpModal?.contains(event.target as Node)
         ) {
             showContextMenu.set(false);
             showHelpModal.set(false);
@@ -113,7 +117,7 @@
                     class="absolute right-0 mt-2 w-48 bg-(--field-color) border border-(--border-color) text-(--text-color) rounded-lg shadow-lg z-50"
                 >
                     <button
-                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition"
+                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
                         on:click={() =>
                             document
                                 .getElementById("profile-update-input")
@@ -122,7 +126,7 @@
                         Update Profile
                     </button>
                     <button
-                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition"
+                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
                         on:click={exportCurrentProfile}
                     >
                         Export Profile
@@ -164,64 +168,134 @@
     />
 </div>
 
-{#if $showHelpModal}
-    <div
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-        <div class="bg-(--field-color) rounded-xl p-8 shadow-2xl w-96 relative">
-            <button
-                class="absolute top-3 right-3 text-xl text-(--text-color-muted) cursor-pointer"
-                on:click={toggleHelpModal}
-            >
-                ✕
-            </button>
+<AnimatedModal 
+    show={$showHelpModal} 
+    maxWidth="max-w-md"
+    on:close={toggleHelpModal}
+    dataAttributes={{ modal: "help" }}
+>
+    <div class="relative">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-(--accent-color) rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-(--text-color)">
+                        Help & Support
+                    </h2>
+                    <p class="text-sm text-(--text-color-muted)">
+                        Get help and connect with the community
+                    </p>
+                </div>
+            </div>
+        </div>
 
-            <h2 class="text-2xl font-semibold text-(--text-color) mb-4">
-                Help & Support
-            </h2>
-
-            <div class="flex flex-col gap-4">
-                <!-- Wikipedia Link -->
+        <!-- Content -->
+        <div class="space-y-4">
+            <!-- Documentation Section -->
+            <div class="bg-(--field-color) rounded-lg p-4 border border-(--border-color)">
+                <h3 class="text-sm font-semibold text-(--text-color) mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-(--accent-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    Documentation
+                </h3>
                 <a
                     href="https://github.com/Vierdant/world-bartender-tool/wiki"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-3 p-3 rounded-lg bg-(--accent-color) text-black hover:opacity-80 transition"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer group"
                 >
-                    <img src="../../../github-icon.png" alt="Wiki" class="w-6 h-6" />
-                    <span>Github Wiki</span>
+                    <img src="../../../github-icon.png" alt="Wiki" class="w-5 h-5 transition-transform group-hover:rotate-12" />
+                    <div class="flex-1">
+                        <div class="font-medium">GitHub Wiki</div>
+                        <div class="text-xs opacity-80">Complete documentation & guides</div>
+                    </div>
+                    <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
                 </a>
+            </div>
 
-                <!-- Support Image -->
+            <!-- Community Section -->
+            <div class="bg-(--field-color) rounded-lg p-4 border border-(--border-color)">
+                <h3 class="text-sm font-semibold text-(--text-color) mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Community
+                </h3>
+                <div class="space-y-2">
+                    <a
+                        href="https://discord.gg/cnknQJDBer"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-3 p-3 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer group"
+                    >
+                        <img src="../../../discord-icon.png" alt="Discord" class="w-5 h-5 transition-transform group-hover:rotate-12" />
+                        <div class="flex-1">
+                            <div class="font-medium">Join Discord</div>
+                            <div class="text-xs opacity-80">Connect with other users</div>
+                        </div>
+                        <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Support Section -->
+            <div class="bg-(--field-color) rounded-lg p-4 border border-(--border-color)">
+                <h3 class="text-sm font-semibold text-(--text-color) mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-(--error-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    Support the Project
+                </h3>
                 <a
                     href="https://ko-fi.com/vierdant"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-3 p-3 rounded-lg bg-(--error-color) text-white hover:opacity-80 transition"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-(--error-color) text-white hover:bg-(--error-color-dark) transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer group"
                 >
-                    <img
-                        src="../../../coffee-icon.png"
-                        alt="Buy Coffee"
-                        class="w-6 h-6"
-                    />
-                    <span>Buy me a coffee {":)"}</span>
+                    <img src="../../../coffee-icon.png" alt="Buy Coffee" class="w-5 h-5 transition-transform group-hover:rotate-12" />
+                    <div class="flex-1">
+                        <div class="font-medium">Buy me a coffee</div>
+                        <div class="text-xs opacity-80">Support development {":)"}</div>
+                    </div>
+                    <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
                 </a>
+            </div>
 
-                <!-- Discord Link -->
-                <a
-                    href="https://discord.gg/cnknQJDBer"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="flex items-center gap-3 p-3 rounded-lg bg-indigo-500 text-white hover:opacity-80 transition"
-                >
-                    <img
-                        src="../../../discord-icon.png"
-                        alt="Discord"
-                        class="w-6 h-6"
-                    />
-                    <span>Join our Discord</span>
-                </a>
+            <!-- Quick Tips -->
+            <div class="bg-(--field-color) rounded-lg p-4 border border-(--border-color)">
+                <h3 class="text-sm font-semibold text-(--text-color) mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    Quick Tips
+                </h3>
+                <div class="space-y-2 text-xs text-(--text-color-muted)">
+                    <div class="flex items-start gap-2">
+                        <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
+                        <span>Use <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">!name</kbd> and <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">!id</kbd> in actions/emotes to get customer's name if available.</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
+                        <span>Drag items to reorder them in manage mode</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
+                        <span>Create advanced multi-step items for complex recipes</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-{/if}
+</AnimatedModal>

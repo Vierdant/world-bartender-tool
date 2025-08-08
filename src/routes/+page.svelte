@@ -7,6 +7,7 @@
   import { v4 as uuid } from "uuid";
   import Toaster from "$lib/components/UI/Toaster.svelte";
   import { toasts } from "$lib/stores/toastStore";
+  import ErrorBoundary from "$lib/components/UI/ErrorBoundary.svelte";
 
   let profileList = $profiles;
   let showContextMenu = false;
@@ -60,22 +61,26 @@
     error = "";
   }
 
-  function saveProfile() {
+  async function saveProfile() {
     if (!name.trim()) {
       error = "Name is required.";
       return;
     }
 
-    const imagePattern = /\.(jpeg|jpg|png|gif|webp|bmp|svg)$/i;
-    if (!imagePattern.test(image.trim())) {
-      error = "Please enter a valid image URL ending in an image extension.";
+    const { validateImageUrl, sanitizeInput } = await import('$lib/utils/validation');
+    const sanitizedName = sanitizeInput(name);
+    const sanitizedImage = sanitizeInput(image);
+    
+    const imageValidation = validateImageUrl(sanitizedImage);
+    if (!imageValidation.valid) {
+      error = imageValidation.error!;
       return;
     }
 
     const newProfile = {
       id: uuid(),
-      name,
-      image,
+      name: sanitizedName,
+      image: sanitizedImage,
       menu: [] as MenuItem[],
       rpHelpers: [
         {
@@ -93,14 +98,31 @@
     goto(`/profile/${profile.id}`);
   }
 
-  function importProfile(event: Event) {
+  async function importProfile(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+
+    // Validate file
+    const { validateFile, validateJSON, validateProfile } = await import('$lib/utils/validation');
+    const fileValidation = validateFile(file);
+    if (!fileValidation.valid) {
+      toasts.addToast({ message: fileValidation.error!, type: "error" });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const parsed = JSON.parse(e.target?.result as string);
+        const jsonString = e.target?.result as string;
+        
+        // Validate JSON
+        const jsonValidation = validateJSON(jsonString);
+        if (!jsonValidation.valid) {
+          toasts.addToast({ message: jsonValidation.error!, type: "error" });
+          return;
+        }
+
+        const parsed = JSON.parse(jsonString);
         const importedProfiles = Array.isArray(parsed) ? parsed : [parsed];
 
         const existingProfileIDs = new Set<string>();
@@ -116,9 +138,14 @@
           return currentProfiles; // No change to store
         });
 
-        const validProfiles = importedProfiles.filter(
-          (p) => p.id && p.name && p.image,
-        );
+        const validProfiles = importedProfiles.filter((p) => {
+          const profileValidation = validateProfile(p);
+          if (!profileValidation.valid) {
+            toasts.addToast({ message: profileValidation.error!, type: "error" });
+            return false;
+          }
+          return true;
+        });
 
         if (validProfiles.length === 0) {
           const error = "No valid profiles found in file.";
@@ -440,4 +467,6 @@
     +
   </button>
 </div>
-<Toaster />
+<ErrorBoundary>
+  <Toaster />
+</ErrorBoundary>

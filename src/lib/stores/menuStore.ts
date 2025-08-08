@@ -130,21 +130,36 @@ export function deleteMenuItem(itemId: string) {
     activeProfile.set(updatedProfile);
 }
 
-export function updateProfileFromFile(event: Event) {
+export async function updateProfileFromFile(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+
+    // Validate file
+    const { validateFile, validateJSON, validateProfile } = await import('$lib/utils/validation');
+    const fileValidation = validateFile(file);
+    if (!fileValidation.valid) {
+        toasts.addToast({ message: fileValidation.error!, type: 'error' });
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const importedProfile = JSON.parse(e.target?.result as string);
-            if (
-                !importedProfile.id ||
-                !importedProfile.name ||
-                !importedProfile.image
-            ) {
+            const jsonString = e.target?.result as string;
+            
+            // Validate JSON
+            const jsonValidation = validateJSON(jsonString);
+            if (!jsonValidation.valid) {
+                toasts.addToast({ message: jsonValidation.error!, type: 'error' });
+                return;
+            }
+
+            const importedProfile = JSON.parse(jsonString);
+            // Validate profile structure
+            const profileValidation = validateProfile(importedProfile);
+            if (!profileValidation.valid) {
                 toasts.addToast({
-                    message: 'Invalid profile data',
+                    message: profileValidation.error!,
                     type: 'error',
                 });
                 return;

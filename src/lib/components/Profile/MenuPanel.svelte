@@ -30,6 +30,8 @@
         panelOpen
     } from '$lib/stores/uiStore';
     import ManageMenuModal from '$lib/components/Modals/ManageMenuModal.svelte';
+    import { fade, fly, scale } from 'svelte/transition';
+    import { quintOut } from 'svelte/easing';
 
     export let profile: Profile;
 
@@ -42,321 +44,297 @@
     import { activeProfile } from '$lib/stores/profile';
     $: currentProfile = $activeProfile || profile;
 
-    function handleCreateOrder() {
-        createOrder(currentProfile.menu);
+    async function handleCreateOrder() {
+        await createOrder(currentProfile.menu);
     }
+
+    // Animation states
+    let isCreatingOrder = false;
+    let hoveredItemId: string | null = null;
 </script>
 
 <div
-    class="w-full max-w-180 bg-(--body-color) p-4 rounded-lg space-y-6 {$panelOpen ? 'hidden' : ''}"
+    class="w-full max-w-180 bg-(--body-color) p-6 rounded-xl space-y-6 {$panelOpen ? 'hidden' : ''}"
 >
-    <div class="flex justify-between items-center">
-        <div class="flex gap-2">
+    <!-- Header Controls -->
+    <div class="flex flex-wrap gap-3 items-center justify-between" in:fly={{ y: -20, duration: 300, easing: quintOut }}>
+        <div class="flex flex-wrap gap-2">
+            <!-- Delete Profile Button -->
             <button
                 on:click={() => showDeleteConfirm.set(true)}
-                class="bg-(--error-color) text-white px-3 py-3 rounded hover:bg-red-700 text-sm transition cursor-pointer"
-                aria-label="delete button"
+                class="group bg-(--error-color) hover:bg-(--error-color-dark) text-white px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
+                aria-label="Delete Profile"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-3 h-3"
-                    viewBox="0 0 25 25"
-                    ><path
-                        d="M22.5 2h-20a.5.5 0 0 0 0 1H3l2.4 19.61A1.59 1.59 0 0 0 7 24h10.9a1.61 1.61 0 0 0 1.61-1.39L21.91 3h.59a.5.5 0 0 0 0-1zm-3.15 13.68-.67-.88.92-1.22zm-.74 6L16 18.29l2-2.66 1.09 1.43zm-12.28 0-.56-4.6 1.12-1.47 2 2.66zM4.22 4.44l1.89 2.49-1.36 1.86zM8.44 3l.28.37-2 2.72L4.38 3zm6.77 0-2.74 3.65L10 3.36l.23-.36zm5.35 0-2.21 2.91-1.9-2.84.05-.07zm-.72 8.65a.46.46 0 0 0-.07.07L18.05 14l-2.29-3 2.53-3.32L20 10.23zm-4.71-1.51-2-2.67 2.71-3.56 1.86 2.85zm-10 1.43-.16-1.33 1.78-2.48L9.19 11l-2.27 3-1.74-2.3zm2.23-4.65 2-2.72 2.49 3.27-2 2.67zm5.11 1.38 2 2.66-2 2.67-2-2.67zm-7.14 5.19 1 1.27-.69.92zm2.22 1.27 2.26-3 2 2.66-2.26 3zm4.92.52 2.3 3-2.26 3-2.3-3zm.63-.83 2-2.66 2.29 3-2 2.67zm7.1-5.74L18.93 6.8l1.79-2.36zM6.68 22.88l2.9-3.81 2.3 3-.69.91H7a.65.65 0 0 1-.32-.1zm5.83 0 .06.08h-.13zm1.32.08-.69-.91 2.26-3 2.86 3.76a.62.62 0 0 1-.36.12z"
-                        style="fill:#ffffff"
-                    /></svg
-                >
+                <svg class="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span class="text-sm font-medium">Delete</span>
             </button>
 
+            <!-- Configure Helpers Button -->
             <button
                 on:click={() => showConfigureHelpersModal.set(true)}
-                class="bg-(--body-color) text-(--accent-color-hover) border-(--accent-color-hover) dark:text-(--accent-color) dark:border-(--accent-color) border-x-2 border-y-2 px-3 py-1 rounded hover:bg-(--accent-color) hover:text-black text-sm transition cursor-pointer"
+                class="group bg-(--accent-color) hover:bg-(--accent-color-hover) text-white px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
             >
-                Configure Helpers
+                <svg class="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <span class="text-sm font-medium">Set Helpers</span>
             </button>
 
+            <!-- Manage Menu Button -->
             <button
                 on:click={() => managingMenu.update((v) => !v)}
-                class="bg-(--body-color) text-(--accept-color) border-(--accept-color) border-x-2 border-y-2 px-3 py-1 rounded hover:bg-(--accept-color) hover:text-black text-sm transition cursor-pointer"
+                class="group bg-(--accept-color) hover:bg-(--accept-color-dark) text-white px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
             >
-                {$managingMenu ? "Done" : "Manage Menu"}
+                <svg class="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+                </svg>
+                <span class="text-sm font-medium">{$managingMenu ? "Close Manager" : "Manage Menu"}</span>
             </button>
+
+            <!-- Archived Orders Button -->
             <button
                 on:click={() => showArchivedModal.set(true)}
-                class="bg-(--body-color) text-(--text-color) border-(--text-color) hover:text-(--body-color) dark:text-(--secondary-color) dark:border-(--secondary-color) border-x-2 border-y-2 px-3 py-1 rounded hover:bg-(--text-color) dark:hover:bg-(--secondary-color) dark:hover:text-black text-sm transition cursor-pointer"
+                class="group bg-(--field-color) hover:bg-(--border-color) text-(--text-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
             >
-                Archived Orders
+                <svg class="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                <span class="text-sm font-medium">Archived</span>
             </button>
-            {#if $managingMenu}
-                <div
-                    class="w-px h-9 bg-(--text-color) dark:bg-(--secondary-color)"
-                ></div>
-                <div
-                    class="text-center flex items-center justify-center gap-4"
+        </div>
+
+        <!-- Management Controls -->
+        {#if $managingMenu}
+            <div class="flex gap-2" in:fly={{ x: 20, duration: 300, easing: quintOut }}>
+                <button
+                    on:click={() => showAddModal.set(true)}
+                    class="group bg-(--body-color) hover:bg-(--accept-color) border-2 border-(--accept-color) text-(--accept-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
                 >
-                    <button
-                        on:click={() => showAddModal.set(true)}
-                        class="bg-(--body-color) text-(--accent-color-hover) border-(--accent-color-hover) dark:text-(--accent-color) dark:border-(--accent-color) border-x-2 border-y-2 px-3 py-1 rounded hover:bg-(--accent-color) hover:text-black text-sm transition cursor-pointer"
-                    >
-                        + New Item
-                    </button>
+                    <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span class="text-sm font-medium">New Item</span>
+                </button>
 
-                    <!-- Vertical Divider -->
+                <button
+                    on:click={() => addNewSection()}
+                    class="group bg-(--body-color) hover:bg-(--accept-color) border-2 border-(--accept-color) text-(--accept-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
+                >
+                    <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <span class="text-sm font-medium">New Section</span>
+                </button>
+            </div>
+        {/if}
+    </div>
 
-                    <button
-                        on:click={() => addNewSection()}
-                        class="bg-(--body-color) text-(--accept-color) border-(--accept-color) border-x-2 border-y-2 px-3 py-1 rounded hover:bg-(--accept-color) hover:text-black text-sm transition cursor-pointer"
-                    >
-                        + New Section
-                    </button>
-                </div>
-            {/if}
+    <!-- Order Creation Section -->
+    <div class="bg-(--body-color) p-4" in:fly={{ y: 20, duration: 300, easing: quintOut }}>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <input
+                placeholder="Customer name (optional)"
+                bind:value={$newCustomerName}
+                class="flex-1 px-4 py-3 rounded border border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200 input-focus form-input"
+            />
+            <input
+                placeholder="ID (optional)"
+                type="number"
+                class="w-35 px-4 py-3 rounded border border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200 input-focus form-input"
+                bind:value={$newCustomerId}
+                min="0"
+            />
+            <button
+                on:click={async () => {
+                    isCreatingOrder = true;
+                    await handleCreateOrder();
+                    setTimeout(() => isCreatingOrder = false, 500);
+                }}
+                class="group bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
+                disabled={isCreatingOrder}
+                aria-label="Create Order"
+            >
+                {#if isCreatingOrder}
+                    <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Creating...</span>
+                {:else}
+                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Create Order</span>
+                {/if}
+            </button>
         </div>
     </div>
 
-    <div class="flex gap-2">
-        <input
-            placeholder="Customer name (optional)"
-            bind:value={$newCustomerName}
-            class="w-full px-3 py-2 rounded border border-(--border-color) bg-(--field-color) text-sm text-(--text-color-muted) dark:text-(--text-color)"
-        />
-        <input
-            placeholder="ID (optional)"
-            type="number"
-            class="w-28 px-3 py-2 rounded border border-(--border-color) bg-(--field-color) text-sm text-(--text-color-muted) dark:text-(--text-color)"
-            bind:value={$newCustomerId}
-            min="0"
-        />
-        <button
-            on:click={handleCreateOrder}
-            class="bg-green-500 text-white px-4 py-3 rounded hover:bg-green-600 text-[1.5rem] transition flex items-center justify-center cursor-pointer"
-            aria-label="Create Order"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-            >
-                <path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-            </svg>
-        </button>
-    </div>
-
+    <!-- Menu Items List -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         role="list"
-        class="space-y-3 max-h-[800px] overflow-y-auto pr-1 relative"
+        aria-label="Menu items list"
+        class="space-y-3 max-h-[600px] overflow-y-auto pr-2 relative custom-scrollbar"
         on:mousemove={handleMouseMove}
-                 on:mouseup={() => handleMouseUp(currentProfile)}
+        on:mouseup={() => handleMouseUp(currentProfile)}
         on:mouseleave={cancelDrag}
     >
-                 {#each currentProfile.menu as item, index (item.id)}
-            <div class="flex items-center justify-between gap-2 group">
+        {#each currentProfile.menu as item, index (item.id)}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div 
+                class="group relative transition-all duration-200"
+                on:mouseenter={() => hoveredItemId = item.id}
+                on:mouseleave={() => hoveredItemId = null}
+                in:fly={{ y: 20, duration: 300, delay: index * 50, easing: quintOut }}
+                out:fly={{ y: -20, duration: 200, easing: quintOut }}
+            >
                 {#if $managingMenu}
+                    <!-- Management Mode -->
                     <div
                         role="listitem"
-                        class="flex justify-between items-center w-full text-white p-5 {item.type ===
-                        'section'
-                            ? 'pt-5 text-[1.25rem]'
-                            : 'border-x-2 border-y-2 rounded border-(--border-color) shadow'} {$draggedItemId ===
-                        item.id
-                            ? 'opacity-50'
-                            : ''}"
+                                                 class="relative {item.type === 'section' ? 'bg-(--body-color)' : 'bg-(--field-color) rounded-xl border border-(--border-color)'} shadow-sm transition-all duration-200 {$draggedItemId === item.id ? 'drag-active' : ''}"
                     >
                         {#if $insertPlaceholderAt === index}
-                            <div
-                                class="absolute left-0 right-0 w-5 rounded h-1 bg-blue-500 transition"
-                            ></div>
+                            <div class="absolute -top-1 left-0 right-0 h-1 bg-blue-500 rounded-full drag-placeholder"></div>
                         {/if}
-                        <!-- Left Side: Image + Name/Section -->
-                        <div class="flex items-center w-2/3">
-                            {#if item.type != "section"}
-                                <div class="w-8 h-8 mr-5 mt-1">
-                                    <img
-                                        src={item.image ||
-                                            (currentTheme === "dark"
-                                                ? "https://i.imgur.com/BSioLsH.png"
-                                                : "https://i.imgur.com/JaaJz6k.png")}
-                                        alt="product"
-                                        class="w-full h-full object-cover rounded"
-                                    />
+                        
+                        <div class="p-4">
+                            <div class="flex items-center justify-between">
+                                <!-- Left Side: Image + Name -->
+                                <div class="flex items-center flex-1 min-w-0">
+                                    {#if item.type != "section"}
+                                        <div class="w-12 h-12 mr-4 flex-shrink-0">
+                                            <img
+                                                src={item.image || (currentTheme === "dark" ? "https://i.imgur.com/BSioLsH.png" : "https://i.imgur.com/JaaJz6k.png")}
+                                                alt="product"
+                                                class="w-full h-full object-cover rounded shadow-sm"
+                                            />
+                                        </div>
+                                    {/if}
+
+                                    <div class="flex-1 min-w-0">
+                                        <span class="block text-lg font-semibold text-gray-900 dark:text-white truncate">
+                                            {item.name}
+                                        </span>
+                                        {#if item.type === "section"}
+                                            <div class="mt-2 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
+                                        {/if}
+                                    </div>
                                 </div>
-                            {/if}
 
-                            <span
-                                class="truncate text-left text-(--text-color) font-medium"
-                            >
-                                {item.name}
-                                {#if item.type === "section"}
+                                <!-- Right Side: Action Buttons -->
+                                <div class="flex items-center gap-2 ml-4">
+                                    <!-- Drag Handle -->
                                     <div
-                                        class="mt-1 border-t border-gray-600 w-full"
-                                    ></div>
-                                {/if}
-                            </span>
-                        </div>
+                                        class="p-2 rounded hover:bg-(--secondary-color) transition-colors cursor-grab active:cursor-grabbing {$isDragging && $draggedItemId === item.id ? 'bg-(--accent-color)' : ''}"
+                                        on:mousedown={(e) => startDrag(e, item.id, index)}
+                                        title="Drag to reorder"
+                                    >
+                                        <svg class="w-4 h-4 text-(--text-color-muted) {$isDragging && $draggedItemId === item.id ? 'text-(--accent-color)' : ''}" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M7 4a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 10a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2z" />
+                                        </svg>
+                                    </div>
+                                    
+                                    <!-- Edit Button -->
+                                    <button
+                                        on:click={() => {
+                                            itemBeingEdited.set(item);
+                                            showAddModal.set(true);
+                                        }}
+                                        class="group p-2 rounded bg-(--accept-color)/10 hover:bg-(--accept-color)/20 transition-all duration-200 transform hover:scale-110 cursor-pointer"
+                                        aria-label="Edit Item"
+                                    >
+                                        <svg class="w-4 h-4 text-(--accept-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
 
-                        <!-- Right Side: Drag Handle, Edit & Delete Buttons -->
-                        <div class="flex gap-2 items-center">
-                            <!-- Drag Handle -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div
-                                class="cursor-grab px-2 py-1 hover:bg-(--border-color) rounded transition-colors {$isDragging && $draggedItemId === item.id ? 'bg-(--accent-color) text-black' : ''}"
-                                on:mousedown={(e) =>
-                                    startDrag(e, item.id, index)}
-                                title="Drag to reorder"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-4 h-4 {$isDragging && $draggedItemId === item.id ? 'text-black' : 'text-(--text-color-muted)'}"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        d="M7 4a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 10a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2z"
-                                    />
-                                </svg>
+                                    <!-- Delete Button -->
+                                    <button
+                                        class="group p-2 rounded bg-(--error-color)/10 hover:bg-(--error-color)/20 transition-all duration-200 transform hover:scale-110 cursor-pointer"
+                                        aria-label="Delete Item"
+                                        on:click={() => deleteMenuItem(item.id)}
+                                    >
+                                        <svg class="w-4 h-4 text-(--error-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
-                            
-                            <button
-                                on:click={() => {
-                                    itemBeingEdited.set(item);
-                                    showAddModal.set(true);
-                                }}
-                                class="bg-(--accept-color-dark) text-(--accept-color) px-3 py-3 rounded hover:bg-blue-700 text-sm transition flex items-center justify-center cursor-pointer"
-                                aria-label="Edit Item"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-3 h-3"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"
-                                    />
-                                </svg>
-                            </button>
-
-                            <button
-                                class="bg-(--error-color-dark) text-(--error-color) px-3 py-3 rounded hover:bg-red-700 text-sm transition flex items-center justify-center cursor-pointer"
-                                aria-label="Delete Item"
-                                on:click={() => deleteMenuItem(item.id)}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-3 h-3"
-                                    viewBox="0 0 25 25"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        d="M22.5 2h-20a.5.5 0 0 0 0 1H3l2.4 19.61A1.59 1.59 0 0 0 7 24h10.9a1.61 1.61 0 0 0 1.61-1.39L21.91 3h.59a.5.5 0 0 0 0-1zm-3.15 13.68-.67-.88.92-1.22zm-.74 6L16 18.29l2-2.66 1.09 1.43zm-12.28 0-.56-4.6 1.12-1.47 2 2.66zM4.22 4.44l1.89 2.49-1.36 1.86zM8.44 3l.28.37-2 2.72L4.38 3zm6.77 0-2.74 3.65L10 3.36l.23-.36zm5.35 0-2.21 2.91-1.9-2.84.05-.07zm-.72 8.65a.46.46 0 0 0-.07.07L18.05 14l-2.29-3 2.53-3.32L20 10.23zm-4.71-1.51-2-2.67 2.71-3.56 1.86 2.85zm-10 1.43-.16-1.33 1.78-2.48L9.19 11l-2.27 3-1.74-2.3zm2.23-4.65 2-2.72 2.49 3.27-2 2.67zm5.11 1.38 2 2.66-2 2.67-2-2.67zm-7.14 5.19 1 1.27-.69.92zm2.22 1.27 2.26-3 2 2.66-2.26 3zm4.92.52 2.3 3-2.26 3-2.3-3zm.63-.83 2-2.66 2.29 3-2 2.67zm7.1-5.74L18.93 6.8l1.79-2.36zM6.68 22.88l2.9-3.81 2.3 3-.69.91H7a.65.65 0 0 1-.32-.1zm5.83 0 .06.08h-.13zm1.32.08-.69-.91 2.26-3 2.86 3.76a.62.62 0 0 1-.36.12z"
-                                    />
-                                </svg>
-                            </button>
                         </div>
                     </div>
                 {:else}
+                    <!-- Order Mode -->
                     <div
-                        class="flex justify-between items-center w-full text-white p-5 {item.type ===
-                        'section'
-                            ? 'pt-5 text-[1.25rem]'
-                            : 'border-x-2 border-y-2 rounded border-(--border-color) shadow'}"
+                        class="relative {item.type === 'section' ? 'bg-(--body-color)' : 'bg-(--field-color) rounded-xl border border-(--border-color)'} shadow-sm transition-all duration-200"
                     >
-                        <!-- Item name -->
-                        {#if item.type != "section"}
-                            {#if currentTheme === "dark"}
-                                <div class="w-8 h-8 mr-5 mt-1 select-none">
-                                    <img
-                                        src={item.image ||
-                                            "https://i.imgur.com/BSioLsH.png"}
-                                        alt="product"
-                                    />
-                                </div>
-                            {:else}
-                                <div class="w-8 h-8 mr-5 mt-1 select-none">
-                                    <img
-                                        src={item.image ||
-                                            "https://i.imgur.com/JaaJz6k.png"}
-                                        alt="product"
-                                    />
-                                </div>
-                            {/if}
-                        {/if}
+                        <div class="p-4">
+                            <div class="flex items-center justify-between">
+                                <!-- Left Side: Image + Name -->
+                                <div class="flex items-center flex-1 min-w-0">
+                                    {#if item.type != "section"}
+                                        <div class="w-12 h-12 mr-4 flex-shrink-0">
+                                            <img
+                                                src={item.image || (currentTheme === "dark" ? "https://i.imgur.com/BSioLsH.png" : "https://i.imgur.com/JaaJz6k.png")}
+                                                alt="product"
+                                                class="w-full h-full object-cover rounded shadow-sm"
+                                            />
+                                        </div>
+                                    {/if}
 
-                        <span
-                            class="truncate text-left text-(--text-color) font-medium w-1/3"
-                            >{item.name}
-                            {#if item.type === "section"}
-                                <div
-                                    class="mt-1 border-t border-gray-600 w-full"
-                                ></div>
-                            {/if}
-                        </span>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="block text-lg font-semibold text-gray-900 dark:text-white truncate">
+                                            {item.name}
+                                        </span>
+                                        {#if item.type === "section"}
+                                            <div class="mt-2 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
+                                        {/if}
+                                    </div>
+                                </div>
 
-                        <!-- Quantity controls (column) -->
-                        {#if item.type != "section"}
-                            <div
-                                class="flex flex-row items-center gap-1 w-1/3"
-                            >
-                                <button
-                                    disabled={(quantities[item.id] || 0) <
-                                        1}
-                                    aria-label="remove item"
-                                    class="w-8 h-8 px-2 py-1 bg-(--secondary-color) hover:bg-(--secondary-color-hover) text-[1rem] text-black rounded text-center flex items-center justify-center transition cursor-pointer"
-                                    on:click={() =>
-                                        updateQty(
-                                            item.id,
-                                            Math.max(
-                                                0,
-                                                quantities[item.id] - 1 ||
-                                                    0,
-                                            ),
-                                        )}
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-10 h-10"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M19 13H5v-2h14v2z" />
-                                    </svg>
-                                </button>
-                                <span
-                                    class="min-w-[20px] text-center text-(--text-color) select-none"
-                                >
-                                    {quantities[item.id] || 0}
-                                </span>
-                                <button
-                                    class="w-8 h-8 px-2 py-1 bg-(--accent-color) hover:bg-(--accent-color-hover) text-[1rem] text-black rounded text-center flex items-center justify-center transition cursor-pointer"
-                                    aria-label="add item"
-                                    on:click={() =>
-                                        updateQty(
-                                            item.id,
-                                            (quantities[item.id] || 0) + 1,
-                                        )}
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-4 h-4"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"
-                                        />
-                                    </svg>
-                                </button>
+                                <!-- Right Side: Quantity Controls + Price -->
+                                {#if item.type != "section"}
+                                    <div class="flex items-center gap-4 ml-4">
+                                        <!-- Quantity Controls -->
+                                        <div class="flex items-center gap-2 bg-(--body-color) rounded p-1">
+                                            <button
+                                                disabled={(quantities[item.id] || 0) < 1}
+                                                aria-label="Remove item"
+                                                class="w-8 h-8 flex items-center justify-center bg-(--field-color) hover:bg-(--secondary-color-hover) text-(--text-color-muted) rounded-md transition-all duration-200 transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                on:click={() => updateQty(item.id, Math.max(0, quantities[item.id] - 1 || 0))}
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                                </svg>
+                                            </button>
+                                            
+                                            <span class="min-w-[2rem] text-center text-lg font-semibold text-(--text-color) select-none">
+                                                {quantities[item.id] || 0}
+                                            </span>
+                                            
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center bg-(--accent-color) hover:bg-(--accent-color-dark) text-black rounded-md transition-all duration-200 transform hover:scale-110 cursor-pointer"
+                                                aria-label="Add item"
+                                                on:click={() => updateQty(item.id, (quantities[item.id] || 0) + 1)}
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                                                                 <!-- Price -->
+                                         <div class="text-right">
+                                             <span class="text-lg font-bold text-(--text-color)">
+                                                 ${item.price.toFixed(0)}
+                                             </span>
+                                         </div>
+                                    </div>
+                                {/if}
                             </div>
-
-                            <!-- Price -->
-                            <span
-                                class="text-sm text-(--text-color-muted) w-1/3 text-right"
-                            >
-                                ${item.price.toFixed(0)}
-                            </span>
-                        {/if}
+                        </div>
                     </div>
                 {/if}
             </div>
@@ -373,15 +351,13 @@
         }}
         on:save={(e) => {
             const updatedItem = e.detail;
-                         const idx = currentProfile.menu.findIndex(
-                 (i) => i.id === updatedItem.id,
-             );
+            const idx = currentProfile.menu.findIndex((i) => i.id === updatedItem.id);
 
-             if (idx >= 0) {
-                 currentProfile.menu[idx] = updatedItem;
-             } else {
-                 currentProfile.menu.push(updatedItem);
-             }
+            if (idx >= 0) {
+                currentProfile.menu[idx] = updatedItem;
+            } else {
+                currentProfile.menu.push(updatedItem);
+            }
             // Update profile through store
             import('$lib/stores/menuStore').then(({ updateProfile }) => {
                 updateProfile();
@@ -389,3 +365,27 @@
         }}
     />
 {/if}
+
+<style>
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(156 163 175) transparent;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: rgb(156 163 175);
+        border-radius: 3px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: rgb(107 114 128);
+    }
+</style>

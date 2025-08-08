@@ -28,8 +28,17 @@
     import RpHelperModal from '$lib/components/Modals/RPHelperModal.svelte';
     import CustomerEditorModal from '$lib/components/Modals/CustomerEditorModal.svelte';
     import ActionViewer from '$lib/components/Modals/ActionViewer.svelte';
+    import OrderActionButton from '$lib/components/UI/OrderActionButton.svelte';
+    import { toasts } from '$lib/stores/toastStore';
 
     export let profile: Profile;
+
+    // Loading states for order actions
+    const loadingStates = {
+        helpers: false,
+        cancel: false,
+        complete: false
+    };
 
     onMount(() => {
         // Add window resize listener to auto-close panel on larger screens
@@ -67,8 +76,8 @@
         }
     }
 
-    function handleCopyEmote(order: Order, itemId: string) {
-        copyEmote(order, itemId, profile.menu, order.customerName);
+    async function handleCopyEmote(order: Order, itemId: string) {
+        await copyEmote(order, itemId, profile.menu, order.customerName);
         // Update orders to trigger reactivity
         currentOrders.update((orders) => {
             const index = orders.findIndex((o) => o.id === order.id);
@@ -78,10 +87,83 @@
             return [...orders];
         });
     }
+
+    // Helper function to determine if the next step is an animation command
+    function getNextStepInfo(order: Order, itemId: string): { isAnimation: boolean; stepText: string; progress: string } {
+        const item = getItem(itemId);
+        const orderItem = order.items.find((i) => i.id === itemId);
+        
+        if (!item || !orderItem || !item.emotes.advanced) {
+            return { isAnimation: false, stepText: '', progress: '' };
+        }
+
+        const emoteSections = item.emotes.sections;
+        if (!emoteSections.length) {
+            return { isAnimation: false, stepText: '', progress: '' };
+        }
+
+        // Default to first section if not tracked yet
+        let sectionIndex = orderItem._emoteSectionIndex ?? 0;
+        let stepIndex = orderItem._emoteStepIndex ?? 0;
+
+        const section = emoteSections[sectionIndex];
+        if (!section || !section.steps.length) {
+            return { isAnimation: false, stepText: '', progress: '' };
+        }
+
+        const step = section.steps[stepIndex];
+        const isAnimation = step.startsWith('/anim') || step.startsWith('/customanim');
+        
+        const progress = `${stepIndex + 1}/${section.steps.length}`;
+        
+        return { isAnimation, stepText: step, progress };
+    }
+
+    // Animated order action handlers
+    async function handleRPHelpers(order: Order) {
+        selectedHelperOrder.set(order);
+        showHelperModal.set(true);
+    }
+
+    async function handleCancelOrder(order: Order) {
+        loadingStates.cancel = true;
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate processing
+            orderToCancel.set(order);
+            showCancelConfirm.set(true);
+            toasts.addToast({ message: 'Order cancelled', type: 'info' });
+        } catch (error) {
+            toasts.addToast({ message: 'Failed to cancel order', type: 'error' });
+        } finally {
+            loadingStates.cancel = false;
+        }
+    }
+
+    async function handleCompleteOrder(order: Order) {
+        loadingStates.complete = true;
+        try {
+            await new Promise(resolve => setTimeout(resolve, 800)); // Simulate processing
+            completeOrder(order.id);
+            toasts.addToast({ message: 'Order completed successfully!', type: 'success' });
+            
+            // Add success animation to the order element
+            const orderElement = document.querySelector(`[data-order-id="${order.id}"]`);
+            if (orderElement) {
+                orderElement.classList.add('order-complete');
+                setTimeout(() => {
+                    orderElement.classList.remove('order-complete');
+                }, 800);
+            }
+        } catch (error) {
+            toasts.addToast({ message: 'Failed to complete order', type: 'error' });
+        } finally {
+            loadingStates.complete = false;
+        }
+    }
 </script>
 
 <div class="right-panel-wrapper">
-    <button class="panel-toggle-button md:hidden" on:click={togglePanel}>
+    <button class="panel-toggle-button md:hidden cursor-pointer" on:click={togglePanel}>
         {$panelOpen ? "Close" : "Orders"}
     </button>
     <!-- Right Panel -->
@@ -107,7 +189,7 @@
         {#if $currentOrders.length > 0}
             {#if $activeOrderId}
                 {#each $currentOrders.filter((o) => o.id === $activeOrderId) as order}
-                    <div>
+                    <div data-order-id={order.id}>
                         <h2
                             class="text-xl font-bold text-(--text-color) mb-4"
                         >
@@ -182,35 +264,33 @@
                                             >
                                                 View List
                                             </button>
-                                            <button
-                                                on:click={() => handleCopyEmote(order, item.id)}
-                                                class="text-sm text-blue-400 hover:underline cursor-pointer"
-                                            >
-                                                Copy RP
-                                                {#if getItem(item.id).emotes.advanced}
-                                                    [
-                                                    {(order.items.find(
-                                                        (i) =>
-                                                            i.id ===
-                                                            item.id,
-                                                    )?._emoteStepIndex ??
-                                                        0) +
-                                                        1 <
-                                                    getItem(item.id).emotes
-                                                        .sections[
-                                                        order.items.find(
-                                                            (i) =>
-                                                                i.id ===
-                                                                item.id,
-                                                        )
-                                                            ?._emoteSectionIndex ??
-                                                            0
-                                                    ].steps.length
-                                                        ? `${(order.items.find((i) => i.id === item.id)?._emoteStepIndex ?? 0) + 1}/${getItem(item.id).emotes.sections[order.items.find((i) => i.id === item.id)?._emoteSectionIndex ?? 0].steps.length}`
-                                                        : `${(order.items.find((i) => i.id === item.id)?._emoteStepIndex ?? 0) + 1}/${getItem(item.id).emotes.sections[order.items.find((i) => i.id === item.id)?._emoteSectionIndex ?? 0].steps.length}`}
-                                                    ]
-                                                {/if}
-                                            </button>
+                                            {#if getItem(item.id).emotes.advanced}
+                                                {@const stepInfo = getNextStepInfo(order, item.id)}
+                                                <button
+                                                    on:click={() => handleCopyEmote(order, item.id)}
+                                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer {stepInfo.isAnimation ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50' : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50'}"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    {stepInfo.isAnimation ? 'Copy Anim' : 'Copy RP'}
+                                                    {#if stepInfo.progress}
+                                                        <span class="text-xs opacity-75 bg-white/50 dark:bg-black/20 px-1.5 py-0.5 rounded">
+                                                            {stepInfo.progress}
+                                                        </span>
+                                                    {/if}
+                                                </button>
+                                            {:else}
+                                                <button
+                                                    on:click={() => handleCopyEmote(order, item.id)}
+                                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    Copy RP
+                                                </button>
+                                            {/if}
                                         </div>
                                     </li>
                                 {/if}
@@ -222,32 +302,22 @@
                         >
                             Total: ${getTotal(order, profile.menu).toFixed(0)}
                         </div>
-                        <div class="mt-2 text-right">
-                            <button
-                                on:click={() => {
-                                    selectedHelperOrder.set(order);
-                                    showHelperModal.set(true);
-                                }}
-                                class="ml-2 bg-(--accent-color) text-black px-4 py-2 rounded hover:bg-(--accent-color-hover) text-sm transition cursor-pointer"
-                            >
-                                RP Helpers
-                            </button>
-                            <button
-                                on:click={() => {
-                                    orderToCancel.set(order);
-                                    showCancelConfirm.set(true);
-                                }}
-                                class="ml-2 bg-(--error-color) text-white px-4 py-2 rounded hover:bg-red-600 text-sm transition cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                on:click={() => completeOrder(order.id)}
-                                class="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm transition cursor-pointer"
-                            >
-                                Complete
-                            </button>
+                        <div class="mt-4 flex justify-end gap-3">
+                            <OrderActionButton 
+                                type="helpers" 
+                                loading={loadingStates.helpers}
+                                on:click={() => handleRPHelpers(order)}
+                            />
+                            <OrderActionButton 
+                                type="cancel" 
+                                loading={loadingStates.cancel}
+                                on:click={() => handleCancelOrder(order)}
+                            />
+                            <OrderActionButton 
+                                type="complete" 
+                                loading={loadingStates.complete}
+                                on:click={() => handleCompleteOrder(order)}
+                            />
                         </div>
                     </div>
                 {/each}
@@ -260,19 +330,21 @@
     </div>
 </div>
 
-{#if $showHelperModal && $selectedHelperOrder}
+{#if $selectedHelperOrder}
     <RpHelperModal
         order={$selectedHelperOrder}
         {profile}
+        show={$showHelperModal}
         on:close={() => {
             showHelperModal.set(false);
         }}
     />
 {/if}
 
-{#if $showEditModal && $editableOrder}
+{#if $editableOrder}
     <CustomerEditorModal
         order={$editableOrder}
+        show={$showEditModal}
         on:close={() => showEditModal.set(false)}
         on:save={() => {
             updateOrderDetails(
@@ -285,10 +357,11 @@
     />
 {/if}
 
-{#if $showItemActionModal && $itemActionItem && $itemActionOrder}
+{#if $itemActionItem && $itemActionOrder}
     <ActionViewer
         item={$itemActionItem}
         order={$itemActionOrder}
+        show={$showItemActionModal}
         on:close={() => {
             showItemActionModal.set(false);
         }}
@@ -355,6 +428,79 @@
     .order-display {
         position: relative;
         z-index: 1;
+    }
+
+    /* Order completion animation */
+    .order-complete {
+        animation: orderComplete 0.8s ease-out;
+    }
+
+    @keyframes orderComplete {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+    }
+
+    /* Order cancellation animation */
+    .order-cancel {
+        animation: orderCancel 0.6s ease-out;
+    }
+
+    @keyframes orderCancel {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        30% {
+            transform: scale(1.02) rotate(-1deg);
+        }
+        100% {
+            transform: scale(0.9) rotate(-2deg);
+            opacity: 0;
+        }
+    }
+
+    /* Success pulse animation */
+    .success-pulse {
+        animation: successPulse 0.6s ease-out;
+    }
+
+    @keyframes successPulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+    }
+
+    /* Error shake animation */
+    .error-shake {
+        animation: errorShake 0.5s ease-in-out;
+    }
+
+    @keyframes errorShake {
+        0%, 100% {
+            transform: translateX(0);
+        }
+        25% {
+            transform: translateX(-5px);
+        }
+        75% {
+            transform: translateX(5px);
+        }
     }
 
     @media (max-width: 762px) {

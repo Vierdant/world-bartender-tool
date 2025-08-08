@@ -2,9 +2,11 @@
     import { createEventDispatcher } from "svelte";
     import { nanoid } from "nanoid";
     import type { Profile, RPHelper } from "$lib/types";
+    import AnimatedModal from "$lib/components/UI/AnimatedModal.svelte";
 
     export let profile: Profile;
     export let onClose: () => void;
+    export let show = false;
 
     const dispatch = createEventDispatcher();
     let helpers: RPHelper[] = [...(profile.rpHelpers || [])];
@@ -47,6 +49,10 @@
         });
     }
 
+    function handleClose() {
+        onClose();
+    }
+
     function save() {
         const newProfile = {
             ...profile,
@@ -57,51 +63,84 @@
     }
 </script>
 
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-(--body-color) rounded-lg p-6 w-full max-w-2xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4 text-(--text-color)">
-            Configure RP Helpers
-        </h2>
+<AnimatedModal {show} maxWidth="max-w-2xl" on:close={handleClose}>
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-(--accent-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-(--text-color)">
+                    Configure RP Helpers
+                </h2>
+            </div>
+            <button
+                on:click={handleClose}
+                class="text-(--text-color-muted) hover:text-(--text-color) transition-colors cursor-pointer"
+                aria-label="Close"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
 
-        <div class="space-y-6 max-h-[500px] overflow-y-auto pr-1">
+        <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
             {#each helpers as helper, i (helper.id)}
-                <div class="bg-(--field-color) p-4 rounded shadow">
-                    <div class="flex justify-between items-center mb-2">
-                        <input
-                            class="text-lg font-semibold w-full bg-transparent text-(--text-color) border-b"
-                            bind:value={helper.name}
-                            placeholder="Section Name"
-                        />
+                <div class="bg-(--field-color) p-4 rounded-lg border border-(--border-color)">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2 flex-1">
+                            <svg class="w-4 h-4 text-(--accent-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            <input
+                                class="text-lg font-semibold w-full bg-transparent text-(--text-color) border-b border-(--border-color) focus:outline-none focus:border-(--accent-color) transition-colors"
+                                bind:value={helper.name}
+                                placeholder="Section Name"
+                            />
+                        </div>
                         <button
                             on:click={() => removeSection(helper.id)}
-                            class="text-(--error-color) text-m ml-2 cursor-pointer"
+                            class="text-(--error-color) hover:text-red-700 transition-colors p-1 rounded cursor-pointer"
+                            aria-label="Remove section"
                         >
-                            ✗
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
                         </button>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         {#each helper.commands as command, j}
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 items-center">
+                                <svg class="w-4 h-4 text-(--text-color-muted) flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
                                 <input
-                                    class="w-full px-2 py-1 rounded border text-(--text-color) bg-(--body-color) border-(--border-color) text-sm"
+                                    class="w-full px-3 py-2 rounded-lg border text-(--text-color) bg-(--body-color) border-(--border-color) text-sm focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-colors"
                                     bind:value={command}
                                     on:input={(e) => updateCommand(helper.id, j, (e.currentTarget as HTMLInputElement).value)}
                                     placeholder="e.g. passes the !items to !name"
                                 />
                                 <button
                                     on:click={() => removeCommand(helper.id, j)}
-                                    class="text-(--error-color) text-m ml-2 cursor-pointer"
+                                    class="text-(--error-color) hover:text-red-700 transition-colors p-1 rounded cursor-pointer"
+                                    aria-label="Remove command"
                                 >
-                                    ✗
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
                                 </button>
                             </div>
                         {/each}
 
                         <button
                             on:click={() => addCommand(helper.id)}
-                            class="text-(--accept-color) text-xs mt-2 cursor-pointer border-x-2 border-y-2 border-(--accept-color) p-1 rounded"
+                            class="text-(--accept-color) text-sm cursor-pointer px-3 py-2 rounded-lg border-2 border-(--accept-color) hover:bg-(--accept-color) hover:text-white transition-colors flex items-center gap-2"
                         >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
                             Add Command
                         </button>
                     </div>
@@ -109,27 +148,30 @@
             {/each}
         </div>
 
-        <div class="flex justify-between items-center mt-6">
+        <div class="flex justify-between items-center pt-4 border-t border-(--border-color)">
             <button
                 on:click={addSection}
-                class="text-green-600 text-sm cursor-pointer border-x-2 border-y-2 border-green-600 p-1 rounded"
+                class="text-green-600 text-sm cursor-pointer px-4 py-2 rounded-lg border-2 border-green-600 hover:bg-green-600 hover:text-white transition-colors flex items-center gap-2"
             >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
                 Add Section
             </button>
-            <div class="space-x-2">
+            <div class="space-x-3">
                 <button
-                    on:click={onClose}
-                    class="px-4 py-2 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition rounded cursor-pointer"
+                    on:click={handleClose}
+                    class="px-4 py-2 text-sm bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition-colors rounded-lg font-medium cursor-pointer"
                 >
                     Cancel
                 </button>
                 <button
                     on:click={save}
-                    class="px-4 py-2 text-sm bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition rounded cursor-pointer"
+                    class="px-4 py-2 text-sm bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition-colors rounded-lg font-medium cursor-pointer"
                 >
                     Save
                 </button>
             </div>
         </div>
     </div>
-</div>
+</AnimatedModal>

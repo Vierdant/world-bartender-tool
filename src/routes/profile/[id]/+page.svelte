@@ -15,7 +15,6 @@
     import type { Profile } from "$lib/types";
     import { goto } from "$app/navigation";
     import { profiles } from "$lib/stores/profile";
-    import { toasts } from "$lib/stores/toastStore";
     import Toaster from "$lib/components/UI/Toaster.svelte";
     import ConfirmationScreen from "$lib/components/UI/ConfirmationScreen.svelte";
     import ArchivedOrdersModal from "$lib/components/Modals/ArchivedOrdersModal.svelte";
@@ -81,55 +80,52 @@
     <OrderPanel {profile} />
 </div>
 
-{#if $showConfigureHelpersModal}
-    <ConfigureHelpersModal
-        {profile}
-        onClose={() => showConfigureHelpersModal.set(false)}
-        on:save={(e) => {
-            const updatedProfile = e.detail;
-            profiles.update((all) =>
-                all.map((p) =>
-                    p.id === updatedProfile.id ? updatedProfile : p,
-                ),
-            );
-            profile = updatedProfile;
-            activeProfile.set({ ...profile });
-        }}
-    />
-{/if}
+<ConfigureHelpersModal
+    {profile}
+    show={$showConfigureHelpersModal}
+    onClose={() => showConfigureHelpersModal.set(false)}
+    on:save={(e) => {
+        const updatedProfile = e.detail;
+        profiles.update((all) =>
+            all.map((p) =>
+                p.id === updatedProfile.id ? updatedProfile : p,
+            ),
+        );
+        profile = updatedProfile;
+        activeProfile.set({ ...profile });
+    }}
+/>
 
-{#if $showArchivedModal}
-    <ArchivedOrdersModal
-        onClose={() => showArchivedModal.set(false)}
-    />
-{/if}
+<ArchivedOrdersModal
+    show={$showArchivedModal}
+    onClose={() => showArchivedModal.set(false)}
+/>
 
-{#if $showReturnConfirm}
-    <ConfirmationScreen
-        type="main"
-        header="Return to Landing Page?"
-        text="Are you sure you want to leave this session?"
-        on:abort={() => showReturnConfirm.set(false)}
-        on:confirm={handleReturn}
-    />
-{/if}
+<ConfirmationScreen
+    type="main"
+    header="Return to Landing Page?"
+    text="Are you sure you want to leave this session?"
+    show={$showReturnConfirm}
+    on:abort={() => showReturnConfirm.set(false)}
+    on:confirm={handleReturn}
+/>
 
-{#if $showDeleteConfirm}
-    <ConfirmationScreen
-        type="error"
-        header="Delete Profile?"
-        text="This action is permanent and cannot be undone."
-        confirm_text="Delete"
-        on:abort={() => showDeleteConfirm.set(false)}
-        on:confirm={deleteProfile}
-    />
-{/if}
+<ConfirmationScreen
+    type="error"
+    header="Delete Profile?"
+    text="This action is permanent and cannot be undone."
+    confirm_text="Delete"
+    show={$showDeleteConfirm}
+    on:abort={() => showDeleteConfirm.set(false)}
+    on:confirm={deleteProfile}
+/>
 
-{#if $showCancelConfirm && $orderToCancel}
+{#if $orderToCancel}
     <ConfirmationScreen
         type="error"
         header="Cancel Order?"
         text="This order will be permanently deleted and not archived."
+        show={$showCancelConfirm}
         on:abort={() => showCancelConfirm.set(false)}
         on:confirm={() => {
             cancelOrder($orderToCancel.id);
