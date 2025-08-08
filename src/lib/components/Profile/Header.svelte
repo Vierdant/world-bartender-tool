@@ -37,28 +37,28 @@
     }
 </script>
 
-<!-- Page Header -->
+<!-- Enhanced Page Header -->
 <div class="relative flex items-center justify-left ml-7 mt-8 mb-4">
     <button
         on:click={() => showReturnConfirm.set(true)}
-        class="cursor-pointer bg-(--border-color) dark:bg-(--accent-color) dark:text-black px-2.5 py-1.5 rounded hover:bg-(--secondary-color-hover) dark:hover:bg-(--accent-color-hover) text-sm mr-5 transition"
+        class="cursor-pointer bg-(--field-color) border border-(--border-color) hover:bg-(--secondary-color-hover) px-3 py-2 rounded-xl text-sm mr-5 transition-all duration-300 group shadow-lg hover:shadow-xl text-(--text-color) hover:text-black"
     >
-        {"<"}
+        <span class="group-hover:scale-110 transition-transform duration-200">{"<"}</span>
     </button>
     <h1 class="text-3xl font-bold text-(--text-color) select-none">
         {profile.name}
     </h1>
-    <div class="absolute right-0 flex items-center gap-5 mr-8">
+    <div class="absolute right-0 flex items-center gap-4 mr-8">
         <button
             on:click={toggleTheme}
-            class="absolute right-0 p-3 mr-14 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
+            class="p-3 rounded-xl bg-(--field-color) border border-(--border-color) hover:bg-(--secondary-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
             aria-label="Toggle Theme"
         >
             {#if currentThemeValue === "light"}
                 <!-- Moon Icon -->
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="h-6 w-6 text-(--field-color)"
+                    class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -74,7 +74,7 @@
                 <!-- Sun Icon -->
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="h-6 w-6 text-black"
+                    class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -88,17 +88,18 @@
                 </svg>
             {/if}
         </button>
+        
         <div class="relative">
             <button
                 id="context-menu-button"
                 on:click={toggleContextMenu}
-                class="p-3 rounded-full bg-(--accent-color) transition-colors cursor-pointer"
+                class="p-3 rounded-xl bg-(--accent-color) hover:bg-(--accent-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
                 aria-label="Open Menu"
             >
                 <!-- Dots Icon -->
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="h-6 w-6 text-black"
+                    class="h-6 w-6 text-black group-hover:scale-110 transition-transform duration-200"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -114,37 +115,45 @@
 
             {#if $showContextMenu}
                 <div
-                    class="absolute right-0 mt-2 w-48 bg-(--field-color) border border-(--border-color) text-(--text-color) rounded-lg shadow-lg z-50"
+                    class="absolute right-0 mt-3 w-56 bg-(--field-color) border border-(--border-color) text-(--text-color) rounded-xl shadow-2xl z-50 backdrop-blur-sm"
                 >
-                    <button
-                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
-                        on:click={() =>
-                            document
-                                .getElementById("profile-update-input")
-                                ?.click()}
-                    >
-                        Update Profile
-                    </button>
-                    <button
-                        class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
-                        on:click={exportCurrentProfile}
-                    >
-                        Export Profile
-                    </button>
+                    <div class="p-2">
+                        <button
+                            class="w-full text-left px-4 py-3 hover:bg-(--accent-color) rounded-lg hover:text-black transition-all duration-200 cursor-pointer flex items-center gap-3 group"
+                            on:click={() =>
+                                document
+                                    .getElementById("profile-update-input")
+                                    ?.click()}
+                        >
+                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                            </svg>
+                            <span class="font-medium">Update Profile</span>
+                        </button>
+                        <button
+                            class="w-full text-left px-4 py-3 hover:bg-(--accent-color) rounded-lg hover:text-black transition-all duration-200 cursor-pointer flex items-center gap-3 group"
+                            on:click={exportCurrentProfile}
+                        >
+                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="font-medium">Export Profile</span>
+                        </button>
+                    </div>
                 </div>
             {/if}
         </div>
-
+        
         <button
             id="help-menu-button"
             on:click={toggleHelpModal}
-            class="absolute right-0 p-3 mr-28 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
+            class="p-3 rounded-xl bg-(--field-color) border border-(--border-color) hover:bg-(--secondary-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
             aria-label="Help"
         >
             <!-- Question Mark Icon -->
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-(--field-color)"
+                class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -153,7 +162,7 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M8 10h.01M12 18h.01M16 10h.01M12 14h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
             </svg>
         </button>

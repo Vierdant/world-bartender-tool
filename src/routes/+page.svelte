@@ -8,6 +8,8 @@
   import Toaster from "$lib/components/UI/Toaster.svelte";
   import { toasts } from "$lib/stores/toastStore";
   import ErrorBoundary from "$lib/components/UI/ErrorBoundary.svelte";
+  import { fly, scale, fade } from 'svelte/transition';
+  import { quintOut, elasticOut } from 'svelte/easing';
 
   let profileList = $profiles;
   let showContextMenu = false;
@@ -208,20 +210,28 @@
   }
 </script>
 
-<!-- Page Header -->
-<div class="relative flex items-center justify-center mt-8 mb-4">
-  <h1 class="text-3xl font-bold text-(--text-color)">Profile Manager</h1>
-  <div class="absolute right-0 flex items-center gap-5 mr-8">
+<!-- Enhanced Page Header -->
+<div class="relative flex items-center justify-center mt-12 mb-8">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold text-(--text-color) mb-2 tracking-tight">
+      Profile Manager
+    </h1>
+    <p class="text-(--text-color-muted) text-lg">
+      Create and manage your bartender profiles
+    </p>
+  </div>
+  
+  <div class="absolute right-0 flex items-center gap-4 mr-8">
     <button
       on:click={toggleTheme}
-      class="absolute right-0 p-3 mr-14 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
+      class="p-3 rounded-xl bg-(--field-color) border border-(--border-color) hover:bg-(--secondary-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
       aria-label="Toggle Theme"
     >
       {#if currentTheme === "light"}
         <!-- Moon Icon -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-(--field-color)"
+          class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -237,7 +247,7 @@
         <!-- Sun Icon -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-black"
+          class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -251,17 +261,18 @@
         </svg>
       {/if}
     </button>
+    
     <div class="relative">
       <button
         id="context-menu-button"
         on:click={toggleContextMenu}
-        class="p-3 rounded-full bg-(--accent-color) transition-colors cursor-pointer"
+        class="p-3 rounded-xl bg-(--accent-color) hover:bg-(--accent-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
         aria-label="Open Menu"
       >
         <!-- Dots Icon -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-black"
+          class="h-6 w-6 text-black group-hover:scale-110 transition-transform duration-200"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -277,34 +288,44 @@
 
       {#if showContextMenu}
         <div
-          class="absolute right-0 mt-2 w-48 bg-(--field-color) border border-(--border-color) text-(--text-color) rounded-lg shadow-lg z-50"
+          class="absolute right-0 mt-3 w-56 bg-(--field-color) border border-(--border-color) text-(--text-color) rounded-xl shadow-2xl z-50 backdrop-blur-sm"
+          transition:fly={{ y: 10, duration: 200, easing: quintOut }}
         >
-          <button
-            class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
-            on:click={() =>
-              document.getElementById("profile-import-input")?.click()}
-          >
-            Import Profile
-          </button>
-          <button
-            class="w-full text-left px-4 py-2 hover:bg-(--accent-color) rounded hover:text-black transition cursor-pointer"
-            on:click={exportAllProfiles}
-          >
-            Export All Profiles
-          </button>
+          <div class="p-2">
+            <button
+              class="w-full text-left px-4 py-3 hover:bg-(--accent-color) rounded-lg hover:text-black transition-all duration-200 cursor-pointer flex items-center gap-3 group"
+              on:click={() =>
+                document.getElementById("profile-import-input")?.click()}
+            >
+              <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+              </svg>
+              <span class="font-medium">Import Profile</span>
+            </button>
+            <button
+              class="w-full text-left px-4 py-3 hover:bg-(--accent-color) rounded-lg hover:text-black transition-all duration-200 cursor-pointer flex items-center gap-3 group"
+              on:click={exportAllProfiles}
+            >
+              <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span class="font-medium">Export All Profiles</span>
+            </button>
+          </div>
         </div>
       {/if}
     </div>
+    
     <button
       id="help-menu-button"
       on:click={toggleHelpModal}
-      class="absolute right-0 p-3 mr-28 rounded-full bg-black dark:bg-(--accent-color) transition-colors cursor-pointer"
+      class="p-3 rounded-xl bg-(--field-color) border border-(--border-color) hover:bg-(--secondary-color-hover) transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl"
       aria-label="Help"
     >
       <!-- Question Mark Icon -->
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 text-(--field-color)"
+        class="h-6 w-6 text-(--text-color) group-hover:scale-110 transition-transform duration-200"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -313,7 +334,7 @@
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
-          d="M8 10h.01M12 18h.01M16 10h.01M12 14h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z"
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
     </button>
@@ -329,16 +350,16 @@
 </div>
 
 {#if showHelpModal}
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-(--field-color) rounded-xl p-8 shadow-2xl w-96 relative">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" transition:fade={{ duration: 200 }}>
+    <div class="bg-(--field-color) rounded-2xl p-8 shadow-2xl w-96 relative max-w-md" transition:scale={{ duration: 300, easing: elasticOut }}>
       <button
-        class="absolute top-3 right-3 text-xl text-(--text-color-muted) cursor-pointer"
+        class="absolute top-4 right-4 text-xl text-(--text-color-muted) hover:text-(--text-color) cursor-pointer transition-colors duration-200"
         on:click={toggleHelpModal}
       >
         ✕
       </button>
 
-      <h2 class="text-2xl font-semibold text-(--text-color) mb-4">Help & Support</h2>
+      <h2 class="text-2xl font-bold text-(--text-color) mb-6">Help & Support</h2>
 
       <div class="flex flex-col gap-4">
         <!-- Wikipedia Link -->
@@ -346,10 +367,10 @@
           href="https://github.com/Vierdant/world-bartender-tool/wiki"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center gap-3 p-3 rounded-lg bg-(--accent-color) text-black hover:opacity-80 transition"
+          class="flex items-center gap-4 p-4 rounded-xl bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition-all duration-300 transform hover:scale-105 group shadow-lg"
         >
-          <img src="github-icon.png" alt="Wiki" class="w-6 h-6" />
-          <span>Github Wiki</span>
+          <img src="github-icon.png" alt="Wiki" class="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+          <span class="font-semibold">Github Wiki</span>
         </a>
 
         <!-- Support Image -->
@@ -357,10 +378,10 @@
           href="https://ko-fi.com/vierdant"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center gap-3 p-3 rounded-lg bg-(--error-color) text-white hover:opacity-80 transition"
+          class="flex items-center gap-4 p-4 rounded-xl bg-(--error-color) text-white hover:bg-(--error-color-dark) transition-all duration-300 transform hover:scale-105 group shadow-lg"
         >
-          <img src="coffee-icon.png" alt="Buy Coffee" class="w-6 h-6" />
-          <span>Buy me a coffee {":)"}</span>
+          <img src="coffee-icon.png" alt="Buy Coffee" class="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+          <span class="font-semibold">Buy me a coffee {":)"}</span>
         </a>
 
         <!-- Discord Link -->
@@ -368,40 +389,42 @@
           href="https://discord.gg/cnknQJDBer"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center gap-3 p-3 rounded-lg bg-indigo-500 text-white hover:opacity-80 transition"
+          class="flex items-center gap-4 p-4 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105 group shadow-lg"
         >
-          <img src="discord-icon.png" alt="Discord" class="w-6 h-6" />
-          <span>Join our Discord</span>
+          <img src="discord-icon.png" alt="Discord" class="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+          <span class="font-semibold">Join our Discord</span>
         </a>
       </div>
     </div>
   </div>
 {/if}
 
-
 {#if showModal}
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" transition:fade={{ duration: 200 }}>
     <div
-      class="bg-(--body-color) rounded-xl shadow-lg p-6 w-full max-w-md relative"
+      class="bg-(--body-color) rounded-2xl shadow-2xl p-8 w-full max-w-md relative border border-(--border-color)"
+      transition:scale={{ duration: 300, easing: elasticOut }}
     >
-      <h2 class="text-xl font-semibold text-(--text-color) mb-4">
+      <h2 class="text-2xl font-bold text-(--text-color) mb-6">
         Create New Profile
       </h2>
 
       {#if error}
-        <p class="text-(--error-color) text-sm mb-2">{error}</p>
+        <div class="mb-4 p-3 rounded-lg bg-(--error-color)/10 border border-(--error-color)/20">
+          <p class="text-(--error-color) text-sm font-medium">{error}</p>
+        </div>
       {/if}
 
-      <div class="space-y-4">
+      <div class="space-y-6">
         <div>
-          <label for="profile-name-field" class="block text-(--text-color) mb-1"
-            >Name</label
+          <label for="profile-name-field" class="block text-(--text-color) mb-2 font-medium"
+            >Profile Name</label
           >
           <input
             id="profile-name-field"
             type="text"
             bind:value={name}
-            class="w-full px-4 py-2 rounded-md border-2 border-(--border-color) bg-(--field-color) text-(--text-color) focus:outline-none focus:ring-2 focus:ring-(--accent-color)"
+            class="w-full px-4 py-3 rounded-xl border-2 border-(--border-color) bg-(--field-color) text-(--text-color) focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
             placeholder="Cafe Vespucci"
           />
         </div>
@@ -409,29 +432,29 @@
         <div>
           <label
             for="profile-image-field"
-            class="block text-(--text-color) mb-1">Image URL</label
+            class="block text-(--text-color) mb-2 font-medium">Image URL</label
           >
           <input
             id="profile-image-field"
             type="text"
             bind:value={image}
-            class="w-full px-4 py-2 rounded-md border-2 border-(--border-color) bg-(--field-color) text-(--text-color) focus:outline-none focus:ring-2 focus:ring-(--accent-color)"
+            class="w-full px-4 py-3 rounded-xl border-2 border-(--border-color) bg-(--field-color) text-(--text-color) focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
             placeholder="https://i.imgur.com/yGmS6e4.jpg"
           />
         </div>
 
-        <div class="flex justify-end space-x-2 pt-4">
+        <div class="flex justify-end space-x-3 pt-6">
           <button
-            class="px-4 py-2 rounded-md bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition cursor-pointer"
+            class="px-6 py-3 rounded-xl bg-(--secondary-color) text-black hover:bg-(--secondary-color-hover) transition-all duration-200 cursor-pointer font-medium shadow-lg hover:shadow-xl"
             on:click={() => (showModal = false)}
           >
             Cancel
           </button>
           <button
-            class="px-4 py-2 rounded-md bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition cursor-pointer"
+            class="px-6 py-3 rounded-xl bg-(--accent-color) text-black hover:bg-(--accent-color-hover) transition-all duration-200 cursor-pointer font-medium shadow-lg hover:shadow-xl"
             on:click={saveProfile}
           >
-            Save
+            Create Profile
           </button>
         </div>
       </div>
@@ -439,34 +462,61 @@
   </div>
 {/if}
 
-<!-- Grid of Cards -->
-<div class="flex flex-wrap justify-left gap-6 pl-20 pr-20">
-  {#each profileList as profile (profile.id)}
+<!-- Enhanced Grid of Cards -->
+<div class="flex flex-wrap justify-center gap-8 px-8 pb-12">
+  {#each profileList as profile, index (profile.id)}
     <button
-      class="relative w-52 h-80 bg-gray-800 rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+      class="relative w-64 h-80 bg-(--field-color) rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-all duration-500 hover:scale-105 hover:shadow-2xl group border border-(--border-color)"
       on:click={() => openProfile(profile)}
+      style="animation-delay: {index * 100}ms"
+      in:fly={{ y: 50, duration: 600, delay: index * 100, easing: quintOut }}
     >
-      <img
-        src={profile.image}
-        alt={profile.name}
-        class="absolute top-0 w-full h-full object-cover"
-      />
-      <div
-        class="absolute bottom-0 w-full bg-(--accent-color) text-black text-center font-semibold py-3 px-4"
-      >
-        {profile.name}
+      <!-- Image with overlay -->
+      <div class="absolute inset-0 overflow-hidden">
+        <img
+          src={profile.image}
+          alt={profile.name}
+          class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
       </div>
+      
+      <!-- Content overlay -->
+      <div class="absolute bottom-0 left-0 right-0 p-6">
+        <div class="bg-black/40 backdrop-blur-sm rounded-lg p-4 -mb-2">
+          <h3 class="text-xl font-bold text-white mb-2 drop-shadow-lg leading-tight">
+            {profile.name}
+          </h3>
+          <div class="flex items-center gap-2 text-white/90 text-sm font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            <span>{profile.menu?.length || 0} items</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hover effect overlay -->
+      <div class="absolute inset-0 bg-(--accent-color)/0 group-hover:bg-(--accent-color)/10 transition-all duration-300"></div>
     </button>
   {/each}
 
-  <!-- Add Profile Card -->
+  <!-- Enhanced Add Profile Card -->
   <button
-    class="w-52 h-80 flex items-center justify-center rounded-2xl shadow-xl bg-(--body-color) border-x-8 border-y-8 border-(--border-color) text-(--border-color) text-[4rem] font-semibold text-xl cursor-pointer hover:scale-105 transition-transform cursor-pointer"
+    class="w-64 h-80 flex flex-col items-center justify-center rounded-2xl shadow-xl bg-(--field-color) border-2 border-dashed border-(--border-color) text-(--text-color-muted) hover:text-(--accent-color) hover:border-(--accent-color) hover:bg-(--accent-color)/5 transition-all duration-500 cursor-pointer group"
     on:click={createNewProfile}
+    in:fly={{ y: 50, duration: 600, delay: profileList.length * 100, easing: quintOut }}
   >
-    +
+    <div class="text-6xl font-light mb-4 group-hover:scale-125 transition-transform duration-300">
+      +
+    </div>
+    <p class="text-lg font-medium">Create New Profile</p>
+    <p class="text-sm text-(--text-color-muted) mt-2 text-center">
+      Start building your bartender profile
+    </p>
   </button>
 </div>
+
 <ErrorBoundary>
   <Toaster />
 </ErrorBoundary>

@@ -137,12 +137,12 @@
             <input
                 placeholder="Customer name (optional)"
                 bind:value={$newCustomerName}
-                class="flex-1 px-4 py-3 rounded border border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200 input-focus form-input"
+                class="flex-1 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
             />
             <input
                 placeholder="ID (optional)"
                 type="number"
-                class="w-35 px-4 py-3 rounded border border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200 input-focus form-input"
+                class="w-35 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
                 bind:value={$newCustomerId}
                 min="0"
             />
