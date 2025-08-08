@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount, onDestroy } from 'svelte';
     import type { Profile, Order, MenuItem } from '$lib/types';
     import { tick } from '$lib/stores/tick';
     import { 
@@ -29,6 +30,30 @@
     import ActionViewer from '$lib/components/Modals/ActionViewer.svelte';
 
     export let profile: Profile;
+
+    onMount(() => {
+        // Add window resize listener to auto-close panel on larger screens
+        const handleResize = () => {
+            if (window.innerWidth > 762 && $panelOpen) {
+                panelOpen.set(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        
+        // Also check on mount in case the window is already large
+        handleResize();
+    });
+
+    onDestroy(() => {
+        // Clean up the event listener
+        const handleResize = () => {
+            if (window.innerWidth > 762 && $panelOpen) {
+                panelOpen.set(false);
+            }
+        };
+        window.removeEventListener('resize', handleResize);
+    });
 
     function getItem(itemId: string): MenuItem {
         return profile.menu.find((m) => m.id === itemId) || profile.menu[0];

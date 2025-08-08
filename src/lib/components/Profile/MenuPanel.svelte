@@ -26,7 +26,8 @@
         showAddModal, 
         showDeleteConfirm, 
         showConfigureHelpersModal, 
-        showArchivedModal 
+        showArchivedModal,
+        panelOpen
     } from '$lib/stores/uiStore';
     import ManageMenuModal from '$lib/components/Modals/ManageMenuModal.svelte';
 
@@ -47,7 +48,7 @@
 </script>
 
 <div
-    class="w-full max-w-180 bg-(--body-color) p-4 rounded-lg space-y-6"
+    class="w-full max-w-180 bg-(--body-color) p-4 rounded-lg space-y-6 {$panelOpen ? 'hidden' : ''}"
 >
     <div class="flex justify-between items-center">
         <div class="flex gap-2">
