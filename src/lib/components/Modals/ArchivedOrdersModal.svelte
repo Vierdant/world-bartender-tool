@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { archivedOrders } from "$lib/stores/profile";
-    import { activeProfile } from "$lib/stores/profile";
-    import { get } from "svelte/store";
-    import { createEventDispatcher } from "svelte";
+    import { archivedOrders, restoreOrder } from "$lib/stores/orderStore";
+import { activeProfile } from "$lib/stores/profile";
+import { get } from "svelte/store";
+import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();
 
@@ -41,8 +41,7 @@
                             </div>
                             <button
                                 class="text-(--accept-color) text-xs cursor-pointer"
-                                on:click={() =>
-                                    dispatch("restoreOrder", order.id)}
+                                on:click={() => restoreOrder(order.id)}
                             >
                                 Restore
                             </button>

@@ -11,6 +11,7 @@
   let price: number = 0;
   let stepsText = '';
   let isAdvanced = false;
+  
 
   // Emote data structure
   let sectionData: { name: string; steps: string[] }[] = [
