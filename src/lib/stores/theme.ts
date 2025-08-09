@@ -1,7 +1,7 @@
 // src/stores/theme.ts
 import { writable } from 'svelte/store';
 
-export const theme = writable<'light' | 'dark'>('light');
+export const theme = writable<'light' | 'dark'>('dark');
 
 // Initialize theme from local storage (optional)
 if (typeof localStorage !== 'undefined') {
