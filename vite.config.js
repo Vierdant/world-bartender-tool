@@ -17,13 +17,26 @@ export default defineConfig(() => ({
     // Enable code splitting
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunk for external dependencies
-          vendor: ['svelte', 'svelte/transition', 'svelte/easing'],
-          // Tauri specific chunk
-          tauri: ['@tauri-apps/api', '@tauri-apps/plugin-clipboard-manager', '@tauri-apps/plugin-opener', '@tauri-apps/plugin-store'],
+        manualChunks: (id) => {
+          // Vendor chunk for node_modules
+          if (id.includes('node_modules')) {
+            if (id.includes('svelte')) {
+              return 'svelte';
+            }
+            // Don't chunk Tauri modules as they're external
+            if (id.includes('@tauri-apps')) {
+              return null;
+            }
+            return 'vendor';
+          }
           // UI components chunk
-          ui: ['src/lib/components/UI/AnimatedModal.svelte', 'src/lib/components/UI/Toaster.svelte'],
+          if (id.includes('src/lib/components/UI/')) {
+            return 'ui';
+          }
+          // Utils chunk
+          if (id.includes('src/lib/utils/')) {
+            return 'utils';
+          }
         },
       },
     },
