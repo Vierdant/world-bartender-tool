@@ -91,6 +91,44 @@ export function validateProfile(profile: any): { valid: boolean; error?: string 
         return { valid: false, error: 'Profile must have a valid menu array' };
     }
 
+    // Validate customTheme if present (optional field)
+    if (profile.customTheme !== undefined && profile.customTheme !== null) {
+        if (typeof profile.customTheme !== 'object') {
+            return { valid: false, error: 'Custom theme must be an object' };
+        }
+        
+        // Validate that both light and dark themes exist
+        if (!profile.customTheme.light || !profile.customTheme.dark) {
+            return { valid: false, error: 'Custom theme must contain both light and dark theme objects' };
+        }
+        
+        // Validate required color properties for each theme
+        const requiredColors = [
+            'bodyColor', 'fieldColor', 'borderColor', 'textColor', 'textColorMuted', 
+            'textColorAccent', 'secondaryColor', 'secondaryColorHover', 'accentColor', 
+            'accentColorHover', 'accentColorDark', 'errorColor', 'errorColorDark', 
+            'infoColor', 'infoColorDark', 'acceptColor', 'acceptColorDark'
+        ];
+        
+        for (const themeMode of ['light', 'dark']) {
+            const theme = profile.customTheme[themeMode];
+            if (typeof theme !== 'object') {
+                return { valid: false, error: `${themeMode} theme must be an object` };
+            }
+            
+            for (const colorKey of requiredColors) {
+                if (!theme[colorKey] || typeof theme[colorKey] !== 'string') {
+                    return { valid: false, error: `Missing or invalid ${colorKey} in ${themeMode} theme` };
+                }
+                
+                // Basic hex color validation
+                if (!/^#[0-9A-Fa-f]{6}$/.test(theme[colorKey])) {
+                    return { valid: false, error: `Invalid hex color format for ${colorKey} in ${themeMode} theme` };
+                }
+            }
+        }
+    }
+
     return { valid: true };
 }
 

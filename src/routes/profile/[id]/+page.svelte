@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { activeProfile } from "$lib/stores/profile";
-    import { theme } from "$lib/stores/theme";
+    import { theme, setProfileCustomTheme, resetToDefaultTheme } from "$lib/stores/theme";
     import { cancelOrder, clearAllOrders } from "$lib/stores/orderStore";
     import { 
         showReturnConfirm, 
@@ -22,12 +22,20 @@
     import Header from "$lib/components/Profile/Header.svelte";
     import MenuPanel from "$lib/components/Profile/MenuPanel.svelte";
     import OrderPanel from "$lib/components/Profile/OrderPanel.svelte";
+    import { toasts } from "$lib/stores/toastStore.js";
 
     export let data;
     export let profile: Profile = data.profile;
 
     onMount(() => {
         activeProfile.set(profile);
+        
+        // Apply the profile's custom theme if it exists
+        if (profile.customTheme) {
+            setProfileCustomTheme(profile.customTheme);
+        } else {
+            resetToDefaultTheme();
+        }
         document.addEventListener("keydown", function (event) {
             if (
                 event.key === "F5" ||
@@ -43,6 +51,9 @@
     });
 
     onDestroy(() => {
+        // Reset theme to default when leaving profile
+        resetToDefaultTheme();
+        
         document.addEventListener("keydown", function (event) {
             if (
                 event.key === "F5" ||
@@ -131,6 +142,7 @@
             cancelOrder($orderToCancel.id);
             showCancelConfirm.set(false);
             orderToCancel.set(null);
+            toasts.addToast({ message: 'Order cancelled', type: 'info' });
         }}
     />
 {/if}

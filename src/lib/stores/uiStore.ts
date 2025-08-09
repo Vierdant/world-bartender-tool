@@ -13,6 +13,7 @@ export const showCancelConfirm = writable(false);
 export const showEditModal = writable(false);
 export const showItemActionModal = writable(false);
 export const showHelpModal = writable(false);
+export const showThemeModal = writable(false);
 
 // Context menu state
 export const showContextMenu = writable(false);
@@ -45,6 +46,10 @@ export function toggleHelpModal() {
     showHelpModal.update(v => !v);
 }
 
+export function toggleThemeModal() {
+    showThemeModal.update(v => !v);
+}
+
 export function closeAllModals() {
     showAddModal.set(false);
     showArchivedModal.set(false);
@@ -56,5 +61,6 @@ export function closeAllModals() {
     showEditModal.set(false);
     showItemActionModal.set(false);
     showHelpModal.set(false);
+    showThemeModal.set(false);
     showContextMenu.set(false);
 }

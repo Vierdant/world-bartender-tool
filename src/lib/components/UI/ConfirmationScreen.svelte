@@ -18,10 +18,10 @@
 
     $: {
         if (type === "info") {
-            bgColor = "var(--accept-color)";
+            bgColor = "var(--info-color)";
             textColor = "white";
             iconPath = "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z";
-            iconColor = "text-green-500";
+            iconColor = "text-(--accept-color)";
         } else if (type === "main") {
             bgColor = "var(--accent-color)";
             textColor = "black";

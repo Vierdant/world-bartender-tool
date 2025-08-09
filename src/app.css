@@ -20,8 +20,10 @@
     --accent-color-dark: #856404;
     --error-color: #dc3545;
     --error-color-dark: #721c24;
-    --accept-color: #2d8be2;
-    --accept-color-dark: #1e3f5e;
+    --info-color: #2d8be2;
+    --info-color-dark: #1e3f5e;
+    --accept-color: #63c72a;
+    --accept-color-dark: #45881e;
 }
 
 .dark {

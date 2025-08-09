@@ -284,7 +284,7 @@
                        {/each}
                        
                        <button
-                         class="w-full mt-3 text-(--accept-color) hover:text-(--accept-color-dark) border-2 border-(--accept-color) hover:bg-(--accept-color)/10 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                         class="w-full mt-3 text-(--info-color) hover:text-(--info-color-dark) border-2 border-(--info-color) hover:bg-(--info-color)/10 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
                          on:click={() => (sectionData[sIndex].steps = [...sectionData[sIndex].steps, ""])}
                        >
                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,7 +298,7 @@
                {/each}
                
                <button
-                 class="w-full text-(--accept-color) hover:text-(--accept-color-dark) border-2 border-(--accept-color) hover:bg-(--accept-color)/10 px-6 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                 class="w-full text-(--info-color) hover:text-(--info-color-dark) border-2 border-(--info-color) hover:bg-(--info-color)/10 px-6 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
                  on:click={() => (sectionData = [...sectionData, { name: "", steps: [""] }])}
                >
                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -349,7 +349,7 @@
       <button
         on:click={save}
         disabled={!name.trim() || isSaving}
-        class="px-6 py-3 text-sm font-medium text-white bg-(--accept-color) hover:bg-(--accept-color-dark) rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        class="px-6 py-3 text-sm font-medium text-white bg-(--info-color) hover:bg-(--info-color-dark) rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         {#if isSaving}
           <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

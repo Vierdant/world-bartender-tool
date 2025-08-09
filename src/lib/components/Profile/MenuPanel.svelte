@@ -58,6 +58,32 @@
     // Animation states
     let isCreatingOrder = false;
     let hoveredItemId: string | null = null;
+    
+    // Search states
+    let searchTerm = '';
+    
+    // Customer fields toggle states
+    let customerFieldsVisible = false;
+    
+    // Filtered menu items based on search
+    $: filteredMenu = searchTerm 
+        ? currentProfile.menu.filter(item => 
+            item.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : currentProfile.menu;
+    
+    function toggleCustomerFields() {
+        customerFieldsVisible = !customerFieldsVisible;
+        if (!customerFieldsVisible) {
+            // Optionally clear fields when hiding
+            // $newCustomerName = '';
+            // $newCustomerId = null;
+        }
+    }
+    
+    function clearSearch() {
+        searchTerm = '';
+    }
 </script>
 
 <div
@@ -92,7 +118,7 @@
             <!-- Manage Menu Button -->
             <button
                 on:click={() => managingMenu.update((v) => !v)}
-                class="group bg-(--accept-color) hover:bg-(--accept-color-dark) text-white px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
+                class="group bg-(--info-color) hover:bg-(--info-color-dark) text-white px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate"
             >
                 <svg class="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
@@ -117,7 +143,7 @@
             <div class="flex gap-2" in:fly={{ x: 20, duration: 300, easing: quintOut }}>
                 <button
                     on:click={() => showAddModal.set(true)}
-                    class="group bg-(--body-color) hover:bg-(--accept-color) border-2 border-(--accept-color) text-(--accept-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
+                    class="group bg-(--body-color) hover:bg-(--info-color) border-2 border-(--info-color) text-(--info-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
                 >
                     <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -127,7 +153,7 @@
 
                 <button
                     on:click={() => addNewSection()}
-                    class="group bg-(--body-color) hover:bg-(--accept-color) border-2 border-(--accept-color) text-(--accept-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
+                    class="group bg-(--body-color) hover:bg-(--info-color) border-2 border-(--info-color) text-(--info-color) px-4 py-2.5 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl btn-animate hover:text-white"
                 >
                     <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
@@ -140,26 +166,38 @@
 
     <!-- Order Creation Section -->
     <div class="bg-(--body-color) p-4" in:fly={{ y: 20, duration: 300, easing: quintOut }}>
-        <div class="flex flex-col sm:flex-row gap-3">
-            <input
-                placeholder="Customer name (optional)"
-                bind:value={$newCustomerName}
-                class="flex-1 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
-            />
-            <input
-                placeholder="ID (optional)"
-                type="number"
-                class="w-35 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
-                bind:value={$newCustomerId}
-                min="0"
-            />
+        <!-- Search Bar and Create Order Button -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-3">
+            <div class="relative flex-1">
+                <input
+                    bind:value={searchTerm}
+                    placeholder="Search menu items..."
+                    class="w-full px-4 py-3 pl-10 rounded border border-2 border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
+                />
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-(--text-color-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            
+            {#if searchTerm}
+                <button
+                    on:click={clearSearch}
+                    class="group px-4 py-3 bg-(--field-color) hover:bg-(--secondary-color) border border-2 border-(--border-color) text-(--text-color-muted) hover:text-(--text-color) rounded transition-all duration-200 transform active:scale-95 cursor-pointer"
+                    aria-label="Clear search"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            {/if}
+            
             <button
                 on:click={async () => {
                     isCreatingOrder = true;
                     await handleCreateOrder();
                     setTimeout(() => isCreatingOrder = false, 500);
                 }}
-                class="group bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
+                class="group bg-(--accept-color) hover:bg-(--accept-color-dark) text-white px-6 py-3 rounded transition-all duration-200 transform active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
                 disabled={isCreatingOrder}
                 aria-label="Create Order"
             >
@@ -176,6 +214,55 @@
                 {/if}
             </button>
         </div>
+        
+        <!-- Search Results Info -->
+        {#if searchTerm}
+            <div class="mb-3 text-sm text-(--text-color-muted)">
+                {filteredMenu.length} item{filteredMenu.length !== 1 ? 's' : ''} found
+            </div>
+        {/if}
+        
+        <!-- Customer Fields Toggle and Fields -->
+        <div class="mb-3">
+            <!-- Customer Fields Toggle Button -->
+            <button
+                on:click={toggleCustomerFields}
+                class="group w-full flex items-center justify-center py-2 text-(--text-color-muted) hover:text-(--text-color) transition-all duration-200 cursor-pointer"
+                aria-label={customerFieldsVisible ? "Hide customer fields" : "Show customer fields"}
+            >
+                <svg 
+                    class="w-4 h-4 transition-transform duration-200 {customerFieldsVisible ? 'rotate-180' : ''}" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            
+            <!-- Customer Fields -->
+            {#if customerFieldsVisible}
+                <div 
+                    class="mt-1 flex flex-col sm:flex-row gap-3"
+                    in:fly={{ y: -20, duration: 300, easing: quintOut }}
+                >
+                    <input
+                        placeholder="Customer name (optional)"
+                        bind:value={$newCustomerName}
+                        class="flex-1 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
+                    />
+                    <input
+                        placeholder="ID (optional)"
+                        type="number"
+                        class="w-35 px-4 py-3 rounded border border-2 border-(--border-color) bg-(--field-color) border-(--border-color) text-(--text-color) placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
+                        bind:value={$newCustomerId}
+                        min="0"
+                    />
+                </div>
+            {/if}
+        </div>
+        
+
     </div>
 
     <!-- Menu Items List -->
@@ -183,12 +270,13 @@
     <div
         role="list"
         aria-label="Menu items list"
-        class="space-y-3 max-h-[600px] overflow-y-auto pr-2 relative custom-scrollbar"
+        class="space-y-3 overflow-y-auto pr-2 relative custom-scrollbar"
+        style="max-height: {(customerFieldsVisible || $managingMenu) ? '520px' : '600px'};"
         on:mousemove={handleMouseMove}
         on:mouseup={() => handleMouseUp(currentProfile)}
         on:mouseleave={cancelDrag}
     >
-        {#each currentProfile.menu as item, index (item.id)}
+        {#each filteredMenu as item, index (item.id)}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div 
                 class="group relative transition-all duration-200"
@@ -250,10 +338,10 @@
                                             itemBeingEdited.set(item);
                                             showAddModal.set(true);
                                         }}
-                                        class="group p-2 rounded bg-(--accept-color)/10 hover:bg-(--accept-color)/20 transition-all duration-200 transform hover:scale-110 cursor-pointer"
+                                        class="group p-2 rounded bg-(--info-color)/10 hover:bg-(--info-color)/20 transition-all duration-200 transform hover:scale-110 cursor-pointer"
                                         aria-label="Edit Item"
                                     >
-                                        <svg class="w-4 h-4 text-(--accept-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 text-(--info-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </button>

@@ -45,7 +45,7 @@
     switch (type) {
       case 'success':
         return {
-          container: `${baseStyles} bg-green-500/90 border-green-400/50 text-white`,
+          container: `${baseStyles} bg-(--accept-color)/90 border-green-400/50 text-white`,
           icon: `${iconStyles} text-green-100`
         };
       case 'error':
@@ -55,7 +55,7 @@
         };
       default:
         return {
-          container: `${baseStyles} bg-(--accept-color)/90 border-(--accept-color)/50 text-white`,
+          container: `${baseStyles} bg-(--info-color)/90 border-(--info-color)/50 text-white`,
           icon: `${iconStyles} text-blue-100`
         };
     }

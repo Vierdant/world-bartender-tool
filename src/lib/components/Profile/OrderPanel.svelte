@@ -126,7 +126,6 @@
             await new Promise(resolve => setTimeout(resolve, 500)); // Simulate processing
             orderToCancel.set(order);
             showCancelConfirm.set(true);
-            toasts.addToast({ message: 'Order cancelled', type: 'info' });
         } catch (error) {
             toasts.addToast({ message: 'Failed to cancel order', type: 'error' });
         } finally {
@@ -196,7 +195,7 @@
                                 >
                             {/if}
                             <button
-                                class="ml-2 text-sm text-(--accept-color) cursor-pointer"
+                                class="ml-2 text-sm text-(--info-color) cursor-pointer"
                                 aria-label="edit-customer-data-order"
                                 on:click={() => {
                                     editableOrder.set({ ...order });
@@ -220,7 +219,7 @@
                         </h2>
 
                         <div
-                            class="flex items-center bg-(--accept-color-dark) rounded text-sm text-(--accept-color) mb-3 w-22 text-center pl-1 select-none"
+                            class="flex items-center bg-(--info-color-dark) rounded text-sm text-(--info-color) mb-3 w-22 text-center pl-1 select-none"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -416,7 +415,7 @@
 
     .order-tabs button.active {
         width: 100px;
-        background-color: var(--accept-color);
+        background-color: var(--info-color);
         color: white;
     }
 

@@ -10,6 +10,20 @@
 
     const dispatch = createEventDispatcher();
     let helpers: RPHelper[] = [...(profile.rpHelpers || [])];
+    let showVariablesHelp = false;
+
+    // Available variables for RP helpers
+    const availableVariables = [
+        { variable: '{customerName}', description: 'Customer\'s name or "the customer" if not provided', example: 'John Doe' },
+        { variable: '{customerId}', description: 'Customer\'s ID or -1 if not provided', example: '123' },
+        { variable: '{customerTarget}', description: 'Use this for commands like /bpay and /to" for targeting', example: '45 or John or -1' },
+        { variable: '{items}', description: 'Simple list of item names with proper grammar', example: 'Coffee, Sandwich and Pizza' },
+        { variable: '{itemsWithQty}', description: 'Items with quantities.', example: '2x Coffee, 1x Sandwich and 1x Pizza' },
+        { variable: '{total}', description: 'Total cost of the order with dollar sign', example: '$15' },
+        { variable: '{totalAmount}', description: 'Total cost of the order without dollar sign', example: '15' },
+        { variable: '{itemCount}', description: 'Total number of items ordered', example: '4' },
+        { variable: '{orderTime}', description: 'How long ago the order was placed', example: '2m 15s' }
+    ];
 
     function addSection() {
         helpers = [...helpers, { id: nanoid(), name: "New Section", commands: [] }];
@@ -63,7 +77,7 @@
     }
 </script>
 
-<AnimatedModal {show} maxWidth="max-w-2xl" on:close={handleClose}>
+<AnimatedModal {show} maxWidth="max-w-2xl">
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -120,7 +134,7 @@
                                     class="w-full px-3 py-2 rounded-lg border text-(--text-color) bg-(--body-color) border-(--border-color) text-sm focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-colors"
                                     bind:value={command}
                                     on:input={(e) => updateCommand(helper.id, j, (e.currentTarget as HTMLInputElement).value)}
-                                    placeholder="e.g. passes the !items to !name"
+                                    placeholder={`e.g. passes the {items} to {customerName}`}
                                 />
                                 <button
                                     on:click={() => removeCommand(helper.id, j)}
@@ -136,7 +150,7 @@
 
                         <button
                             on:click={() => addCommand(helper.id)}
-                            class="text-(--accept-color) text-sm cursor-pointer px-3 py-2 rounded-lg border-2 border-(--accept-color) hover:bg-(--accept-color) hover:text-white transition-colors flex items-center gap-2"
+                            class="text-(--info-color) text-sm cursor-pointer px-3 py-2 rounded-lg border-2 border-(--info-color) hover:bg-(--info-color) hover:text-white transition-colors flex items-center gap-2"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -148,16 +162,62 @@
             {/each}
         </div>
 
+        <!-- Variables Help Section -->
+        {#if showVariablesHelp}
+            <div class="bg-(--field-color) p-4 rounded-lg border border-(--border-color) mt-4">
+                <h3 class="font-semibold mb-3 text-(--text-color) flex items-center gap-2">
+                    <svg class="w-4 h-4 text-(--info-color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Available Variables
+                </h3>
+                <div class="grid grid-cols-1 gap-2 text-xs">
+                    {#each availableVariables as variable}
+                        <div class="flex justify-between items-center p-2 rounded bg-(--body-color)">
+                            <div class="flex-1">
+                                <code class="text-(--info-color) bg-(--field-color) px-1 rounded font-mono">
+                                    {variable.variable}
+                                </code>
+                                <span class="text-(--text-color-muted) ml-2">{variable.description}</span>
+                            </div>
+                            <div class="text-(--text-color) font-medium ml-2 text-xs">
+                                {variable.example}
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+                <div class="mt-3 p-2 bg-(--body-color) rounded text-xs text-(--text-color-muted)">
+                    <strong>Example:</strong> <code class="bg-(--field-color) px-1 rounded">/me passes the {`{itemsWithQty}`} to {`{customerTarget}`}</code>
+                    <br/>
+                    <strong>Result:</strong> "/me passes the 2x Coffee, 1x Sandwich and 1x Pizza to 123"
+                    <br/>
+                    <span class="text-(--text-color-muted)">Note: {`{customerTarget}`} uses ID if available, otherwise name, then "-1"</span>
+                </div>
+            </div>
+        {/if}
+
         <div class="flex justify-between items-center pt-4 border-t border-(--border-color)">
-            <button
-                on:click={addSection}
-                class="text-green-600 text-sm cursor-pointer px-4 py-2 rounded-lg border-2 border-green-600 hover:bg-green-600 hover:text-white transition-colors flex items-center gap-2"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Section
-            </button>
+            <div class="flex gap-2">
+                <button
+                    on:click={addSection}
+                    class="text-(--accept-color) text-sm cursor-pointer px-4 py-2 rounded-lg border-2 border-(--accept-color) hover:bg-(--accept-color) hover:text-white transition-colors flex items-center gap-2"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Section
+                </button>
+                <button
+                    on:click={() => showVariablesHelp = !showVariablesHelp}
+                    class="text-(--info-color) text-sm cursor-pointer px-4 py-2 rounded-lg border-2 border-(--info-color) hover:bg-(--info-color) hover:text-white transition-colors flex items-center gap-2"
+                    aria-label={showVariablesHelp ? "Hide variables help" : "Show variables help"}
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {showVariablesHelp ? "Hide Help" : "Variables Help"}
+                </button>
+            </div>
             <div class="space-x-3">
                 <button
                     on:click={handleClose}
