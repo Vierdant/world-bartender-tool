@@ -74,7 +74,7 @@
                 Cancel
             </button>
             <button
-                class="px-4 py-2 text-sm bg-(--accept-color) text-white hover:bg-(--accept-color-dark) transition-colors rounded-lg font-medium cursor-pointer"
+                class="px-4 py-2 text-sm bg-(--info-color) text-white hover:bg-(--info-color-dark) transition-colors rounded-lg font-medium cursor-pointer"
                 on:click={handleSave}
             >
                 Save

@@ -17,20 +17,95 @@
     }
 
     function formatItems(): string {
-        return order.items
+        const items = order.items
             .map((item) => {
                 const menuItem = getItem(item.id);
                 return menuItem ? `${menuItem.name}` : "";
             })
-            .filter(Boolean)
-            .join(" and ");
+            .filter(Boolean);
+        
+        if (items.length === 0) return "";
+        if (items.length === 1) return items[0];
+        if (items.length === 2) return `${items[0]} and ${items[1]}`;
+        
+        // For 3 or more items: "item1, item2 and item3" (no Oxford comma)
+        const lastItem = items.pop();
+        return `${items.join(", ")} and ${lastItem}`;
+    }
+
+    function formatItemsWithQuantities(): string {
+        const items = order.items
+            .map((item) => {
+                const menuItem = getItem(item.id);
+                if (!menuItem) return "";
+                // Always show quantity, even for 1
+                return `${item.qty}x ${menuItem.name}`;
+            })
+            .filter(Boolean);
+        
+        if (items.length === 0) return "";
+        if (items.length === 1) return items[0];
+        if (items.length === 2) return `${items[0]} and ${items[1]}`;
+        
+        // For 3 or more items: "item1, item2 and item3" (no Oxford comma)
+        const lastItem = items.pop();
+        return `${items.join(", ")} and ${lastItem}`;
+    }
+
+    function getOrderTotal(): string {
+        const total = order.items.reduce((sum, item) => {
+            const menuItem = getItem(item.id);
+            return sum + (menuItem ? menuItem.price * item.qty : 0);
+        }, 0);
+        return `$${total.toFixed(0)}`;
+    }
+
+    function getOrderTotalAmount(): string {
+        const total = order.items.reduce((sum, item) => {
+            const menuItem = getItem(item.id);
+            return sum + (menuItem ? menuItem.price * item.qty : 0);
+        }, 0);
+        return total.toFixed(0);
+    }
+
+    function getCustomerTarget(): string {
+        // Priority: customerId > customerName > "-1"
+        if (order.customerId !== null && order.customerId !== undefined) {
+            return order.customerId.toString();
+        }
+        if (order.customerName && order.customerName.trim()) {
+            return order.customerName;
+        }
+        return "-1";
+    }
+
+    function getItemCount(): number {
+        return order.items.reduce((sum, item) => sum + item.qty, 0);
+    }
+
+    function formatElapsedTime(): string {
+        if (!order.createdAt) return "unknown";
+        const elapsed = Date.now() - order.createdAt;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
     }
 
     function fillPlaceholders(template: string): string {
         return template
-            .replace("!items", formatItems())
-            .replace("!name", order.customerName || "the customer")
-            .replace("!id", order.customerId + "" || " ");
+            .replace(/{customerName}/g, order.customerName || "the customer")
+            .replace(/{customerId}/g, order.customerId?.toString() || "-1")
+            .replace(/{customerTarget}/g, getCustomerTarget())
+            .replace(/{items}/g, formatItems())
+            .replace(/{itemsWithQty}/g, formatItemsWithQuantities())
+            .replace(/{total}/g, getOrderTotal())
+            .replace(/{totalAmount}/g, getOrderTotalAmount())
+            .replace(/{itemCount}/g, getItemCount().toString())
+            .replace(/{orderTime}/g, formatElapsedTime())
+            // Legacy support for old format
+            .replace(/!name/g, order.customerName || "the customer")
+            .replace(/!id/g, order.customerId?.toString() || "")
+            .replace(/!items/g, formatItems());
     }
 
     function handleClose() {
@@ -55,7 +130,7 @@
             </button>
         </div>
 
-        <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-1">
             {#if profile.rpHelpers.length > 0}
                 {#each profile.rpHelpers as section}
                     <div class="bg-(--field-color) p-4 rounded-lg border border-(--border-color)">
@@ -72,7 +147,7 @@
                                         {fillPlaceholders(command)}
                                     </span>
                                     <button
-                                        class="text-(--accept-color) text-xs cursor-pointer px-2 py-1 rounded hover:bg-(--accept-color) hover:text-white transition-colors"
+                                        class="text-(--info-color) text-xs cursor-pointer px-2 py-1 rounded hover:bg-(--info-color) hover:text-white transition-colors"
                                         on:click={() => {
                                             navigator.clipboard.writeText(
                                                 fillPlaceholders(command),
@@ -103,7 +178,7 @@
         <div class="flex justify-end pt-4 border-t border-(--border-color)">
             <button
                 on:click={handleClose}
-                class="bg-(--accept-color) text-white px-6 py-2 rounded-lg hover:bg-(--accept-color-dark) transition-colors font-medium cursor-pointer"
+                class="bg-(--info-color) text-white px-6 py-2 rounded-lg hover:bg-(--info-color-dark) transition-colors font-medium cursor-pointer"
             >
                 Close
             </button>

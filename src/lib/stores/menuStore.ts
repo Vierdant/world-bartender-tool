@@ -101,6 +101,7 @@ export function updateProfile() {
         image: currentProfile.image,
         menu: currentProfile.menu,
         rpHelpers: currentProfile.rpHelpers,
+        customTheme: currentProfile.customTheme,
     };
 
     profiles.update((profiles) =>
@@ -217,6 +218,17 @@ export async function updateProfileFromFile(event: Event) {
 
                 // No conflicts — Perform update
                 activeProfile.set(importedProfile);
+                
+                // Apply custom theme if imported profile has one
+                if (importedProfile.customTheme) {
+                    import('$lib/stores/theme').then(({ setProfileCustomTheme }) => {
+                        setProfileCustomTheme(importedProfile.customTheme);
+                    });
+                } else {
+                    import('$lib/stores/theme').then(({ resetToDefaultTheme }) => {
+                        resetToDefaultTheme();
+                    });
+                }
 
                 return currentProfiles.map((p) =>
                     p.id === currentProfile.id ? importedProfile : p,

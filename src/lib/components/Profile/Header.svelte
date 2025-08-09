@@ -1,12 +1,15 @@
 <script lang="ts">
     import type { Profile } from '$lib/types';
     import { theme } from '$lib/stores/theme';
-    import { showContextMenu, showHelpModal, toggleTheme, toggleContextMenu, toggleHelpModal } from '$lib/stores/uiStore';
-    import { exportCurrentProfile, updateProfileFromFile } from '$lib/stores/menuStore';
+    import { showContextMenu, showHelpModal, showThemeModal, toggleTheme, toggleContextMenu, toggleHelpModal, toggleThemeModal } from '$lib/stores/uiStore';
+    import { exportCurrentProfile, updateProfileFromFile, updateProfile } from '$lib/stores/menuStore';
+    import { setProfileCustomTheme } from '$lib/stores/theme';
     import { showReturnConfirm } from '$lib/stores/uiStore';
     import { goto } from '$app/navigation';
     import { onMount, onDestroy } from 'svelte';
     import AnimatedModal from '$lib/components/UI/AnimatedModal.svelte';
+    import ThemeCustomizationModal from '$lib/components/Modals/ThemeCustomizationModal.svelte';
+    import type { CustomTheme } from '$lib/types';
 
     export let profile: Profile;
 
@@ -26,6 +29,23 @@
             document.removeEventListener("click", handleClickOutside);
         };
     });
+    
+    // Set the profile's custom theme when component mounts
+    $: if (profile?.customTheme) {
+        setProfileCustomTheme(profile.customTheme);
+    }
+    
+    function handleThemeSave(event: CustomEvent<CustomTheme | null>) {
+        const customTheme = event.detail;
+        profile.customTheme = customTheme || undefined;
+        setProfileCustomTheme(customTheme);
+        updateProfile();
+        showThemeModal.set(false);
+    }
+    
+    function handleThemeClose() {
+        showThemeModal.set(false);
+    }
 
     function handleClickOutside(event: MouseEvent) {
         const context = document.getElementById('context-menu-button');
@@ -144,6 +164,18 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                             <span class="font-medium">Export Profile</span>
+                        </button>
+                        <button
+                            class="w-full text-left px-4 py-3 hover:bg-(--accent-color) rounded-lg hover:text-black transition-all duration-200 cursor-pointer flex items-center gap-3 group"
+                            on:click={() => {
+                                toggleThemeModal();
+                                showContextMenu.set(false);
+                            }}
+                        >
+                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3H5a2 2 0 00-2 2v12a4 4 0 004 4h2a2 2 0 002-2V5a2 2 0 00-2-2zM9 9h6m-6 4h6m2-7V4a2 2 0 012-2h2a2 2 0 012 2v2M17 21v-2a2 2 0 012-2h2a2 2 0 012 2v2"></path>
+                            </svg>
+                            <span class="font-medium">Customize Theme</span>
                         </button>
                     </div>
                 </div>
@@ -299,7 +331,7 @@
                 <div class="space-y-2 text-xs text-(--text-color-muted)">
                     <div class="flex items-start gap-2">
                         <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
-                        <span>Use <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">!name</kbd> and <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">!id</kbd> in actions/emotes to get customer's name if available.</span>
+                        <span>Use variables in RP helpers: <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">{`{customerName}`}</kbd>, <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">{`{total}`}</kbd>, <kbd class="px-1.5 py-0.5 bg-(--border-color) rounded text-xs">{`{items}`}</kbd>, and more</span>
                     </div>
                     <div class="flex items-start gap-2">
                         <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
@@ -309,8 +341,20 @@
                         <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
                         <span>Create advanced multi-step items for complex recipes</span>
                     </div>
+                    <div class="flex items-start gap-2">
+                        <div class="w-1.5 h-1.5 bg-(--accent-color) rounded-full mt-1.5 flex-shrink-0"></div>
+                        <span>Export/import profiles to backup your themes and data</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </AnimatedModal>
+
+<!-- Theme Customization Modal -->
+<ThemeCustomizationModal 
+    show={$showThemeModal}
+    currentCustomTheme={profile.customTheme}
+    on:save={handleThemeSave}
+    on:close={handleThemeClose}
+/>

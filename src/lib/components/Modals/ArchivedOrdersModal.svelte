@@ -64,7 +64,7 @@
                                 </div>
                             </div>
                             <button
-                                class="text-(--accept-color) text-xs cursor-pointer px-2 py-1 rounded hover:bg-(--accept-color) hover:text-white transition-colors"
+                                class="text-(--info-color) text-xs cursor-pointer px-2 py-1 rounded hover:bg-(--info-color) hover:text-white transition-colors"
                                 on:click={() => handleRestore(order.id)}
                             >
                                 Restore
@@ -127,7 +127,7 @@
                 </div>
                 <button
                     on:click={handleClose}
-                    class="bg-(--accept-color) text-white px-6 py-2 rounded-lg hover:bg-(--accept-color-dark) transition-colors font-medium cursor-pointer"
+                    class="bg-(--info-color) text-white px-6 py-2 rounded-lg hover:bg-(--info-color-dark) transition-colors font-medium cursor-pointer"
                 >
                     Close
                 </button>
@@ -136,7 +136,7 @@
             <div class="flex justify-end pt-4 border-t border-(--border-color)">
                 <button
                     on:click={handleClose}
-                    class="bg-(--accept-color) text-white px-6 py-2 rounded-lg hover:bg-(--accept-color-dark) transition-colors font-medium cursor-pointer"
+                    class="bg-(--info-color) text-white px-6 py-2 rounded-lg hover:bg-(--info-color-dark) transition-colors font-medium cursor-pointer"
                 >
                     Close
                 </button>
