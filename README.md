@@ -1,4 +1,4 @@
-![App Preview](./assets/application-preview.png)
+![App Preview](./assets/preview-image.png)
 
 <div align="center">
 
