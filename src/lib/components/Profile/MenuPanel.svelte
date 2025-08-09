@@ -36,7 +36,14 @@
     export let profile: Profile;
 
     let currentTheme = 'light';
-    theme.subscribe((value) => (currentTheme = value));
+    import { onDestroy } from 'svelte';
+    
+    // Properly handle theme subscription
+    const themeUnsubscribe = theme.subscribe((value) => (currentTheme = value));
+    
+    onDestroy(() => {
+        themeUnsubscribe();
+    });
 
     $: quantities = $itemQuantities;
     

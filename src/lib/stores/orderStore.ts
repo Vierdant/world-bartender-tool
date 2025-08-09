@@ -1,4 +1,4 @@
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import { nanoid } from 'nanoid';
 import type { Order, MenuItem } from '$lib/types';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
@@ -16,6 +16,31 @@ export const itemQuantities = writable<Record<string, number>>({});
 
 // Order tracking for advanced emotes
 const lastUsedSectionIndex: Record<string, number> = {};
+
+// Derived store for active order - reduces lookups
+export const activeOrder = derived(
+    [currentOrders, activeOrderId],
+    ([$currentOrders, $activeOrderId]) => {
+        if (!$activeOrderId) return null;
+        return $currentOrders.find(order => order.id === $activeOrderId) || null;
+    }
+);
+
+// Derived store for total order count
+export const orderCount = derived(
+    currentOrders,
+    ($currentOrders) => $currentOrders.length
+);
+
+// Derived store for non-empty quantities
+export const activeQuantities = derived(
+    itemQuantities,
+    ($itemQuantities) => {
+        return Object.fromEntries(
+            Object.entries($itemQuantities).filter(([_, qty]) => qty > 0)
+        );
+    }
+);
 
 function getRandomSectionIndex(itemId: string, sectionCount: number): number {
     if (sectionCount <= 1) return 0;
@@ -84,11 +109,18 @@ export async function createOrder(menu: MenuItem[]) {
     itemQuantities.set({});
 }
 
+// Optimized updateQty to avoid unnecessary updates
 export function updateQty(itemId: string, qty: number) {
-    itemQuantities.update((quantities) => ({
-        ...quantities,
-        [itemId]: qty,
-    }));
+    itemQuantities.update((quantities) => {
+        // Only update if the value actually changed
+        if (quantities[itemId] === qty) {
+            return quantities;
+        }
+        return {
+            ...quantities,
+            [itemId]: qty,
+        };
+    });
 }
 
 export function completeOrder(orderId: string) {

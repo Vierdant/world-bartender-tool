@@ -6,9 +6,38 @@ import tailwindcss from '@tailwindcss/vite';
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(() => ({
   base: './',
   plugins: [sveltekit(), tailwindcss()],
+
+  // Build optimizations
+  build: {
+    // Enable minification
+    minify: true,
+    // Enable code splitting
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunk for external dependencies
+          vendor: ['svelte', 'svelte/transition', 'svelte/easing'],
+          // Tauri specific chunk
+          tauri: ['@tauri-apps/api', '@tauri-apps/plugin-clipboard-manager', '@tauri-apps/plugin-opener', '@tauri-apps/plugin-store'],
+          // UI components chunk
+          ui: ['src/lib/components/UI/AnimatedModal.svelte', 'src/lib/components/UI/Toaster.svelte'],
+        },
+      },
+    },
+    // Target modern browsers for better optimization
+    target: 'esnext',
+    // Chunk size warnings
+    chunkSizeWarningLimit: 1000,
+  },
+
+  // Performance optimizations
+  optimizeDeps: {
+    include: ['svelte', 'svelte/transition', 'svelte/easing'],
+    exclude: ['@tauri-apps/api'],
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

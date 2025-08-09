@@ -84,6 +84,7 @@
     };
 
     dispatch("save", updatedItem);
+    handleClose();
     
     setTimeout(() => {
       isSaving = false;
@@ -99,7 +100,9 @@
 <div 
   class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
   role="dialog"
-  on:click={handleClose}
+  aria-modal="true"
+  aria-labelledby="modal-title"
+  tabindex="-1"
   on:keydown={(e) => e.key === 'Escape' && handleClose()}
   in:fade={{ duration: 200 }}
   out:fade={{ duration: 200 }}
@@ -107,7 +110,7 @@
   <!-- Modal Content -->
   <div
     class="bg-(--body-color) border-2 border-(--border-color) rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
-    on:click|stopPropagation
+    role="document"
     in:scale={{ duration: 300, easing: quintOut, start: 0.9 }}
     out:scale={{ duration: 200, easing: quintOut, start: 1 }}
   >
@@ -120,7 +123,7 @@
           </svg>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-(--text-color)">
+          <h2 id="modal-title" class="text-xl font-bold text-(--text-color)">
             {itemToEdit
               ? itemToEdit?.type != "section"
                 ? "Edit Menu Item"
@@ -149,10 +152,11 @@
       <!-- Basic Information -->
       <div class="space-y-4" in:fly={{ y: 20, duration: 300, delay: 100, easing: quintOut }}>
         <div>
-          <label class="block text-sm font-medium text-(--text-color) mb-2">
+          <label for="item-name" class="block text-sm font-medium text-(--text-color) mb-2">
             Item Name *
           </label>
           <input
+            id="item-name"
             placeholder="Enter item name..."
             bind:value={name}
             class="w-full px-4 py-3 rounded-lg border border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-(--text-color-muted) focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
@@ -162,10 +166,11 @@
         {#if itemToEdit?.type != "section"}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-(--text-color) mb-2">
+              <label for="item-image" class="block text-sm font-medium text-(--text-color) mb-2">
                 Image URL (optional)
               </label>
               <input
+                id="item-image"
                 placeholder="https://example.com/image.jpg"
                 bind:value={image}
                 class="w-full px-4 py-3 rounded-lg border border-(--border-color) bg-(--field-color) text-(--text-color) placeholder-(--text-color-muted) focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200"
@@ -173,12 +178,13 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-(--text-color) mb-2">
+              <label for="item-price" class="block text-sm font-medium text-(--text-color) mb-2">
                 Price
               </label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-(--text-color-muted)">$</span>
                 <input
+                  id="item-price"
                   type="number"
                   min="0"
                   step="0.01"
@@ -197,7 +203,7 @@
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                </svg>
                <div>
-                 <label class="text-sm font-medium text-(--text-color) cursor-pointer">
+                 <label for="advanced-toggle" class="text-sm font-medium text-(--text-color) cursor-pointer">
                    Advanced Multi-Step Item
                  </label>
                  <p class="text-xs text-(--text-color-muted)">
@@ -207,6 +213,7 @@
              </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input
+                id="advanced-toggle"
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={isAdvanced}
@@ -311,10 +318,11 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-(--text-color) mb-2">
+                <label for="emote-steps" class="block text-sm font-medium text-(--text-color) mb-2">
                   Emote Steps (one per line)
                 </label>
                 <textarea
+                  id="emote-steps"
                   bind:value={stepsText}
                   on:input={updateSteps}
                   class="w-full px-4 py-3 h-32 rounded-lg border border-(--border-color) bg-(--field-color) text-(--text-color) focus:outline-none focus:ring-2 focus:ring-(--accent-color) focus:border-transparent transition-all duration-200 resize-none"

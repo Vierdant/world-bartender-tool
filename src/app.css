@@ -106,19 +106,21 @@ body {
   }
 }
 
-/* Enhanced hover effects */
+/* Optimized hover effects - using transform and opacity only for better performance */
 .hover-lift {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .hover-lift:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) translateZ(0);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Smooth transitions for all interactive elements */
+/* Optimized smooth transitions - targeting specific properties for better performance */
 .transition-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 /* Loading animation */
@@ -128,38 +130,41 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
-/* Enhanced button animations */
+/* Optimized button animations - targeting specific properties for GPU acceleration */
 .btn-animate {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .btn-animate:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1px) translateZ(0);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-animate:active {
-  transform: translateY(0);
+  transform: translateY(0) translateZ(0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Card hover effects */
+/* Optimized card hover effects - using GPU acceleration */
 .card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) translateZ(0);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Input focus animations */
+/* Optimized input focus animations - reduced scale for better performance */
 .input-focus {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .input-focus:focus {
-  transform: scale(1.02);
+  transform: scale(1.01) translateZ(0);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -172,11 +177,12 @@ body {
   animation: slideInFromRight 0.2s ease-in reverse;
 }
 
-/* Drag and drop visual feedback */
+/* Optimized drag and drop visual feedback - GPU acceleration */
 .drag-active {
-  transform: rotate(2deg) scale(1.02);
+  transform: rotate(2deg) scale(1.02) translateZ(0);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   z-index: 10;
+  will-change: transform;
 }
 
 .drag-placeholder {
@@ -351,7 +357,39 @@ body {
   animation: fadeInUp 0.2s ease-out;
 }
 
-/* Responsive animations */
+/* Performance optimizations - selective GPU acceleration */
+.performance-optimized {
+  /* Enable hardware acceleration for better performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize specific classes for GPU acceleration */
+.gpu-accelerated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Contain layout and style for better performance */
+.contain-layout {
+  contain: layout style;
+}
+
+/* Contain paint for isolated rendering */
+.contain-paint {
+  contain: paint;
+}
+
+/* Optimize scrolling performance */
+.scroll-optimized {
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Responsive animations with performance consideration */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -359,5 +397,14 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    will-change: auto !important;
+  }
+}
+
+/* High refresh rate support */
+@media (min-resolution: 120dpi) {
+  .smooth-animation {
+    animation-timing-function: linear;
+    will-change: transform;
   }
 }

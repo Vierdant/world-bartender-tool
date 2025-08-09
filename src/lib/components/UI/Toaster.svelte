@@ -61,8 +61,8 @@
     }
   }
 
-  // Auto-dismiss toasts after 5 seconds (only if they don't have a custom duration)
-  $: if ($toasts.length > 0) {
+  // Auto-dismiss toasts - optimized to avoid excessive timeout creation
+  $: {
     $toasts.forEach(toast => {
       if (!toastTimeouts.has(toast.id) && !toast.duration) {
         const timeout = setTimeout(() => {

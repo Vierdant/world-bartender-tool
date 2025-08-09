@@ -11,14 +11,20 @@
     export let profile: Profile;
 
     let currentThemeValue = 'light';
-    theme.subscribe((value) => (currentThemeValue = value));
-
+    let themeUnsubscribe: (() => void) | undefined;
+    
     onMount(() => {
-       document.addEventListener("click", handleClickOutside);
-    });
-
-    onDestroy(() => {
-        document.removeEventListener("click", handleClickOutside);
+        // Subscribe to theme changes
+        themeUnsubscribe = theme.subscribe((value) => (currentThemeValue = value));
+        
+        // Add click outside listener
+        document.addEventListener("click", handleClickOutside);
+        
+        // Return cleanup function
+        return () => {
+            themeUnsubscribe?.();
+            document.removeEventListener("click", handleClickOutside);
+        };
     });
 
     function handleClickOutside(event: MouseEvent) {

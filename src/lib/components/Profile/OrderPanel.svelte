@@ -52,16 +52,11 @@
         
         // Also check on mount in case the window is already large
         handleResize();
-    });
-
-    onDestroy(() => {
-        // Clean up the event listener
-        const handleResize = () => {
-            if (window.innerWidth > 762 && $panelOpen) {
-                panelOpen.set(false);
-            }
+        
+        // Return cleanup function
+        return () => {
+            window.removeEventListener('resize', handleResize);
         };
-        window.removeEventListener('resize', handleResize);
     });
 
     function getItem(itemId: string): MenuItem {
@@ -430,8 +425,8 @@
         z-index: 1;
     }
 
-    /* Order completion animation */
-    .order-complete {
+    /* Order completion animation - utility class for dynamic use */
+    :global(.order-complete) {
         animation: orderComplete 0.8s ease-out;
     }
 
@@ -450,8 +445,8 @@
         }
     }
 
-    /* Order cancellation animation */
-    .order-cancel {
+    /* Order cancellation animation - utility class for dynamic use */
+    :global(.order-cancel) {
         animation: orderCancel 0.6s ease-out;
     }
 
@@ -469,8 +464,8 @@
         }
     }
 
-    /* Success pulse animation */
-    .success-pulse {
+    /* Success pulse animation - utility class for dynamic use */
+    :global(.success-pulse) {
         animation: successPulse 0.6s ease-out;
     }
 
@@ -486,8 +481,8 @@
         }
     }
 
-    /* Error shake animation */
-    .error-shake {
+    /* Error shake animation - utility class for dynamic use */
+    :global(.error-shake) {
         animation: errorShake 0.5s ease-in-out;
     }
 
